@@ -86,32 +86,43 @@ void serialEvent() {
     case 0:
       RotateMode = VELOCITY;
       RotateSetpoint = -1 * first + second; //[rotate-,rotate+]
+      RotateOutput = RotateSetpoint;
+      rotate.SetMode(MANUAL);
       break;
     case 1:
       LowerMode = VELOCITY;
       LowerSetpoint = -1 * first + second; //[lower-,lower+]
+      LowerOutput = LowerSetpoint;
+      lower.SetMode(MANUAL);
       break;
     case 2:
       UpperMode = VELOCITY;
       UpperSetpoint = -1 * first + second; //[upper-,upper+]
+      UpperOutput = UpperSetpoint;
+      upper.SetMode(MANUAL);
       break;
     case 3:
       GripperMode = VELOCITY;
       GripperSetpoint = -1 * first + second; //[gripper-,gripper+]
+      GripperOutput = GripperSetpoint;
+      gripper.SetMode(MANUAL);
       break;
     case 4:
 
       // this might cause an issue trying to left shift a char
       RotateMode = POSITION;
       RotateSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      rotate.SetMode(AUTOMATIC);
       break;
     case 5:
       LowerMode = POSITION;
       LowerSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      lower.SetMode(AUTOMATIC);
       break;
     case 6:
       UpperMode = POSITION;
       UpperSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      upper.SetMode(AUTOMATIC);
       break;
   };
 }
@@ -122,6 +133,7 @@ void UpdateRotate() {
   LatestValue = RotateFeedback();
   if (RotateMode == VELOCITY) {
     RotateInput = LatestValue - LastValue;
+    
   }
   else if (RotateMode == POSITION) {
     RotateInput = LatestValue;
