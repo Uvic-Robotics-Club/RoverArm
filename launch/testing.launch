@@ -1,14 +1,16 @@
 <launch>
-  <group ns="HMI">
+
     <node pkg="RoverArm" name="joy2dmc" type="joy_teleop" respawn="true" />
-    <node pkg="joy" name="Joystick" type="joy_node" respawn="true" />
+    <node pkg="joy" name="Joystick" type="joy_node" respawn="true" >
+      <!--remap from="joy" to="joy" /-->
+    </node>
     <node pkg="RoverArm" name="dmc" type="direct_motor_control" respawn="true" >
       <param name="output_type" value="virtual" />
     </node>
-  </group>
+
 
   <group ns="testing">
-    <node pkg="RoverArm" name="ArduinoSimulator" type="arduino_sim" />
+    <!--node pkg="RoverArm" name="ArduinoSimulator" type="arduino_sim" /-->
     <!-- node pkg="RoverArm" name="JoystickSimulator" type="joystick_sim" /-->
   </group>
 

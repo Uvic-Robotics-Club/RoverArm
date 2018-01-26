@@ -11,15 +11,77 @@
 
 
 std::string usbPort;
-bool output_type = false;
+serial::Serial ser;
+ros::Publisher armPub;
+bool output_to_serial = true;
 
 uint8_t velocities[] = {0,0,0,0};
 
+double mapValue(double x, double in_min, double in_max, double out_min, double out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void sendToArm(){
+  geometry_msgs::QuaternionStamped diagnostics_msg;
+  if(output_to_serial){
+    ser.write(&velocities[0],4);
+  }
+
+  diagnostics_msg.header.stamp = ros::Time::now();
+  diagnostics_msg.header.frame_id = "Arm Diagnostics";
+  diagnostics_msg.quaternion.x = velocities[0];
+  diagnostics_msg.quaternion.y = velocities[1];
+  diagnostics_msg.quaternion.z = velocities[2];
+  diagnostics_msg.quaternion.w = velocities[3];
+  armPub.publish(diagnostics_msg);
+}
+
 
 void setVelocity(const geometry_msgs::Twist::ConstPtr& newVelocities){
-  velocities[BASE] = (uint8_t) newVelocities->angular.x;
-  velocities[LOWER_ELBOW] = (uint8_t) newVelocities->angular.y;
-  velocities[UPPER_ELBOW] = (uint8_t) newVelocities->angular.z;
+  static int rotate = 0;
+  static int lower = 0;
+  static int upper = 0;
+
+  rotate = round(newVelocities->angular.x*255.0*newVelocities->linear.x);
+  lower = round(newVelocities->angular.y*255.0*newVelocities->linear.y);
+  upper = round(newVelocities->angular.z*255.0*newVelocities->linear.z);
+
+  velocities[0] = 0;
+  if(rotate>0){
+    velocities[1] = 0;
+    velocities[2] = (uint8_t)abs(rotate);
+  }
+  else{
+    velocities[1] = (uint8_t)abs(rotate);
+    velocities[2] = 0;
+  }
+  sendToArm();
+
+  velocities[0] = 1;
+  if(round(lower)>0){
+    velocities[1] = 0;
+    velocities[2] = (uint8_t)abs(lower);
+  }
+  else{
+    velocities[1] = (uint8_t)abs(lower);
+    velocities[2] = 0;
+  }
+  sendToArm();
+
+  velocities[0] = 2;
+  if(round(upper)>0){
+    velocities[1] = 0;
+    velocities[2] = (uint8_t)abs(upper);
+  }
+  else{
+    velocities[1] = (uint8_t)abs(upper);
+    velocities[2] = 0;
+  }
+  sendToArm();
+
+  //ROS_INFO("%f,%f,%f,%f", newVelocities->angular.x,newVelocities->angular.y,newVelocities->angular.z,newVelocities->angular.w);
+
 }
 
 
@@ -27,43 +89,32 @@ int main(int argc, char **argv){
 	//Initialize ROS node
 	ros::init(argc,argv,"DirectMotorControl");
 	ros::NodeHandle nh;
+  ros::NodeHandle pnh("~");
   ros::Subscriber joySub = nh.subscribe("Arm/AngleVelocities",1,setVelocity);
-  ros::Publisher armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",20);
-  if (nh.hasParam("~output_type")){
-    output_type=true;
+  armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",20);
+  //nh.param<std::string>("~USBPORT", usbPort, "/dev/ttyUSB0");
+
+  if (pnh.hasParam("output_type")){
+    output_to_serial=false;
   }
   else{
-    nh.param<std::string>("~USBPORT", usbPort, "/dev/ttyUSB0");
-    serial::Serial ser("/dev/ttyUSB0",9600);
     try{
+      serial::Serial ser("/dev/ttyUSB0",9600);
   		ser.open();
   	}catch(serial::IOException& e){
   		ROS_INFO("unable to open port");
-  		throw std::invalid_argument( "Unable to open the usb port (likely its the wrong usb name or its busy)" );
+  		//throw std::invalid_argument( "Unable to open the usb port (likely its the wrong usb name or its busy)" );
   	}
   	if(ser.isOpen()){
   		ROS_INFO("Serial Port Initialized");
   	}
   	else{
-  		throw std::invalid_argument( "Unable to open the Serial Communication port to the UKART" );
+  		//throw std::invalid_argument( "Unable to open the Serial Communication port to the UKART" );
   	}
   }
-  ros::Rate loop_rate(10);
-  geometry_msgs::QuaternionStamped diagnostics_msg;
+  ros::Rate loop_rate(100);
   while(ros::ok()){
-    if(not output_type){
-      ser.write(&velocities[0],4);
-    }
-
-    diagnostics_msg.header.stamp = ros::Time::now();
-    diagnostics_msg.header.frame_id = "Arm Diagnostics";
-    diagnostics_msg.quaternion.x = velocities[0];
-    diagnostics_msg.quaternion.y = velocities[1];
-    diagnostics_msg.quaternion.z = velocities[2];
-    diagnostics_msg.quaternion.w = velocities[3];
-    armPub.publish(diagnostics_msg);
-
-
+    //sendToArm();
     ros::spinOnce();
     loop_rate.sleep();
   }
