@@ -3,6 +3,7 @@
 #include <geometry_msgs/Point.h>
 #include <RoverArm/arm_velocity.h>
 #include <RoverArm/point_to_angle.h>
+#include <RoverArm/joint_angles.h>
 
 // array locations of AXES
 int side_to_side = 0;
@@ -27,21 +28,30 @@ int button_11 = 10;
 int button_12 = 11;
 
 ros::ServiceClient client;
-void prog_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
+ros::Publisher posPub;
+
+void prog_to_arm(const geometry_msgs::Point::ConstPtr& pt){
   RoverArm::point_to_angle srv;
-  srv.request.destination.x = joy->axes[clockwise_counterclockwise];
-  srv.request.destination.y = joy->axes[forward_back];
-  srv.request.destination.z = joy->axes[side_to_side];
+  srv.request.destination.x = pt->x;
+  srv.request.destination.y = pt->y;
+  srv.request.destination.z = pt->z;
   client.call(srv);
-  ROS_INFO_STREAM("BASE ANGLE IS " << srv.response.angles.base_angle << " AND THE INPUT WAS "<< joy->axes[clockwise_counterclockwise]);
+
+  RoverArm::joint_angles newMessage;
+  newMessage.base_angle = srv.response.angles.base_angle;
+  newMessage.lower_angle = srv.response.angles.lower_angle;
+  newMessage.upper_angle = srv.response.angles.upper_angle;
+  posPub.publish(newMessage);
+
 }
 
 int main(int argc, char **argv){
 	//Initialize ROS node
 	ros::init(argc,argv,"Program_Teleop");
 	ros::NodeHandle nh;
-  ros::Subscriber joySub = nh.subscribe("joy",10,prog_to_arm);
-  client = nh.serviceClient<RoverArm::point_to_angle>("test_service");
+  ros::Subscriber joySub = nh.subscribe("Arm/Goal",10,prog_to_arm);
+  posPub = nh.advertise<RoverArm::joint_angles>("Arm/Position",10);
+  client = nh.serviceClient<RoverArm::point_to_angle>("arm_ik");
   ros::spin();
   return 0;
 }

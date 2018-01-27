@@ -1,6 +1,5 @@
 #include "ros/ros.h" // needed for everything
 #include <sensor_msgs/Joy.h>
-#include <geometry_msgs/Twist.h>
 #include <RoverArm/arm_velocity.h>
 
 // array locations of AXES
@@ -65,7 +64,7 @@ int main(int argc, char **argv){
 	ros::init(argc,argv,"Joy_Teleop");
 	ros::NodeHandle nh;
   anglePub = nh.advertise<RoverArm::arm_velocity>("Arm/AngleVelocities",10);
-  ros::Subscriber joySub = nh.subscribe("joy",10,joy_to_arm);
+  ros::Subscriber joySub = nh.subscribe("arm_joy",10,joy_to_arm);
   ros::spin();
   return 0;
 }
