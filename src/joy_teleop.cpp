@@ -1,6 +1,7 @@
 #include "ros/ros.h" // needed for everything
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
+#include <RoverArm/arm_velocity.h>
 
 // array locations of AXES
 int side_to_side = 0;
@@ -37,7 +38,7 @@ double mapValue(double x, double in_min, double in_max, double out_min, double o
 
 // Velocity commands callback function
 void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
-  geometry_msgs::Twist newMessage;
+  RoverArm::arm_velocity newMessage;
   if(joy->buttons[button_7]==1){
     rotate_enable = !rotate_enable;
   }
@@ -47,12 +48,13 @@ void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
   if(joy->buttons[button_11]==1){
     upper_enable = !upper_enable;
   }
-  newMessage.linear.x = 1.0*rotate_enable;
-  newMessage.linear.y = 1.0*lower_enable;
-  newMessage.linear.z = 1.0*upper_enable;
-  newMessage.angular.x = joy->axes[clockwise_counterclockwise]*joy->axes[slider];
-  newMessage.angular.y = joy->axes[forward_back]*joy->axes[slider];
-  newMessage.angular.z = joy->axes[ud_hat]*joy->axes[slider];
+  newMessage.enable.rotate = rotate_enable;
+  newMessage.enable.lower = lower_enable;
+  newMessage.enable.upper = upper_enable;
+  newMessage.joint.rotate = joy->axes[clockwise_counterclockwise]*joy->axes[slider];
+  newMessage.joint.lower = joy->axes[forward_back]*joy->axes[slider];
+  newMessage.joint.upper = joy->axes[ud_hat]*joy->axes[slider];
+  newMessage.joint.gripper = -1*joy->buttons[trigger]+joy->buttons[thumb_rest];
   anglePub.publish(newMessage);
 
 }
@@ -62,7 +64,7 @@ int main(int argc, char **argv){
 	//Initialize ROS node
 	ros::init(argc,argv,"Joy_Teleop");
 	ros::NodeHandle nh;
-  anglePub = nh.advertise<geometry_msgs::Twist>("Arm/AngleVelocities",10);
+  anglePub = nh.advertise<RoverArm::arm_velocity>("Arm/AngleVelocities",10);
   ros::Subscriber joySub = nh.subscribe("joy",10,joy_to_arm);
   ros::spin();
   return 0;

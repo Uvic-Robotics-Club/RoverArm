@@ -1,0 +1,3 @@
+geometry_msgs/Point destination
+---
+RoverArm/joint_angles angles

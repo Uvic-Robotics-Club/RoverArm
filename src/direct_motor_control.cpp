@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/QuaternionStamped.h>
+#include <RoverArm/arm_velocity.h>
 #include <serial/serial.h>
 
 #define BASE 0
@@ -38,15 +39,15 @@ void sendToArm(){
 }
 
 
-void setVelocity(const geometry_msgs::Twist::ConstPtr& newVelocities){
+void setVelocity(const RoverArm::arm_velocity::ConstPtr& newVelocities){
   static int rotate = 0;
   static int lower = 0;
   static int upper = 0;
 
-  rotate = round(newVelocities->angular.x*255.0*newVelocities->linear.x);
-  lower = round(newVelocities->angular.y*255.0*newVelocities->linear.y);
-  upper = round(newVelocities->angular.z*255.0*newVelocities->linear.z);
-
+  rotate = round(newVelocities->joint.rotate*255.0*newVelocities->enable.rotate);
+  lower = round(newVelocities->joint.lower*255.0*newVelocities->enable.lower);
+  upper = round(newVelocities->joint.upper*255.0*newVelocities->enable.upper);
+  // [mode, value-, value+, nothing]
   velocities[0] = 0;
   if(rotate>0){
     velocities[1] = 0;
