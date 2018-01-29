@@ -24,11 +24,15 @@ double mapValue(double x, double in_min, double in_max, double out_min, double o
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+
 void sendToArm(){
-  geometry_msgs::QuaternionStamped diagnostics_msg;
-  if(output_to_serial){
-    ser.write(&data_to_send[0],4);
-  }
+    geometry_msgs::QuaternionStamped diagnostics_msg;
+
+    if(output_to_serial){
+        ser.flush();
+        ser.write(&data_to_send[0],4);
+    }
+
 
   diagnostics_msg.header.stamp = ros::Time::now();
   diagnostics_msg.quaternion.x = data_to_send[0];
@@ -114,55 +118,77 @@ void setPosition(const RoverArm::joint_angles::ConstPtr& newdata_to_send){
   rotate = (unsigned int) round(mapValue(newdata_to_send->base_angle,-6.28318,6.28318,0,65536));
   lower = (unsigned int) round(mapValue(newdata_to_send->lower_angle,-6.28318,6.28318,0,65536));
   upper = (unsigned int) round(mapValue(newdata_to_send->upper_angle,-6.28318,6.28318,0,65536));
-  // [mode, value-, value+, nothing]
+
+  //converting to 8 bit; had problems getting proper behavior when just using a cast.
+  uint8_t rotateH = rotate>>8;
+  uint8_t rotateL = rotate;
+
+  uint8_t lowerH = lower>>8;
+  uint8_t lowerL = lower;
+
+  uint8_t upperH = upper>>8;
+  uint8_t upperL = upper;
+
+
+  // [mode, H, L, nothing]
   data_to_send[0] = 4;
-  data_to_send[1] = (uint8_t)rotate&0xFF00>>8;
-  data_to_send[2] = (uint8_t)rotate&0x00FF<<8;
+  data_to_send[1] = rotateH;
+  data_to_send[2] = rotateL;
   sendToArm();
 
   data_to_send[0] = 5;
-  data_to_send[1] = (uint8_t)lower&0xFF00>>8;
-  data_to_send[2] = (uint8_t)rotate&0x00FF<<8;
+  data_to_send[1] = lowerH;
+  data_to_send[2] = lowerL;
   sendToArm();
 
   data_to_send[0] = 6;
-  data_to_send[1] = (uint8_t)upper&0xFF00>>8;
-  data_to_send[2] = (uint8_t)upper&0x00FF<<8;
-
+  data_to_send[1] = upperH;
+  data_to_send[2] = upperL;
   sendToArm();
+
 }
 
+
 int main(int argc, char **argv){
-	//Initialize ROS node
-	ros::init(argc,argv,"DirectMotorControl");
-	ros::NodeHandle nh;
+  //Initialize ROS node
+  ros::init(argc,argv,"DirectMotorControl");
+  ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   ros::Subscriber joySub = nh.subscribe("Arm/AngleVelocities",1,setVelocity);
   ros::Subscriber progSub = nh.subscribe("Arm/Position",1,setPosition);
   armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",20);
-  //nh.param<std::string>("~USBPORT", usbPort, "/dev/ttyUSB0");
+  //nh.param<std::string>("~USBPORT", usbPort, "/dev/ttyACM0");
 
+
+  //Slight re-write for opening serial port; This method gave me the most stability on my machine.
   if (pnh.hasParam("output_type")){
     output_to_serial=false;
   }
   else{
-    try{
-      serial::Serial ser("/dev/ttyUSB0",9600);
-  		ser.open();
-  	}catch(serial::IOException& e){
-  		ROS_INFO("unable to open port");
-  		//throw std::invalid_argument( "Unable to open the usb port (likely its the wrong usb name or its busy)" );
-  	}
-  	if(ser.isOpen()){
-  		ROS_INFO("Serial Port Initialized");
-  	}
-  	else{
-  		//throw std::invalid_argument( "Unable to open the Serial Communication port to the UKART" );
-  	}
+      try
+    {
+        ser.setPort("/dev/ttyACM0");
+        ser.setBaudrate(9600);
+        serial::Timeout to = serial::Timeout::simpleTimeout(1000);
+        ser.setTimeout(to);
+        ser.open();
+    }
+    catch (serial::IOException& e)
+    {
+        ROS_ERROR_STREAM("Unable to open port ");
+        return -1;
+    }
+
+    if(ser.isOpen()){
+        ROS_INFO_STREAM("Serial Port initialized");
+    }else{
+        return -1;
+    }
   }
+
+
   ros::Rate loop_rate(100);
   while(ros::ok()){
-    //sendToArm();
     ros::spinOnce();
     loop_rate.sleep();
   }

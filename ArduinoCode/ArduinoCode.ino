@@ -1,5 +1,5 @@
-
 #include <PID_v1.h>
+#include <Stepper.h>
 
 /*
    This will control 4 joints
@@ -25,6 +25,21 @@
 #define VELOCITY 1
 #define POSITION 0
 #define TIMEOUT 1000
+
+
+//Stepper motor and corresponding limit switch Settings
+#define rotateLimitPin 2
+const int stepsPerRevolution {800};
+int rotateCurrentSteps {0};
+bool rotateZeroSet {0};
+int rotateLimitState {0};
+Stepper rotateStepper(stepsPerRevolution, 9, 10, 11, 12);
+
+//Lower Joint linear Actuator Power Pins
+#define LOWEREXTEND 7
+#define LOWERRETRACT 8
+
+
 
 double LastMessageReceived = 0;
 
@@ -64,8 +79,15 @@ void OutputUpper();
 void OutputGripper();
 
 
+
 void setup() {
-  // put your setup code here, to run once:
+  // Serial Setup
+  Serial.begin(9600);
+
+  //Rotate Stepper Setup
+  pinMode(rotateLimitPin, INPUT);
+  rotateStepper.setSpeed(60);
+
 
 }
 
@@ -77,11 +99,19 @@ void loop() {
 }
 
 void serialEvent() {
-  unsigned char mode = Serial.read();
-  unsigned char first  = Serial.read();
-  unsigned char second  = Serial.read();
-  unsigned char third  = Serial.read();
-  LastMessageReceived = millis();
+
+  unsigned char mode, first, second, third;
+
+//adding the > 3 made data more reliable. Is it possible to add into the serialEvent
+//function?
+  if (Serial.available() > 3) {
+    mode = Serial.read();
+    first  = Serial.read();
+    second  = Serial.read();
+    third  = Serial.read();
+    LastMessageReceived = millis();
+  } else return;
+
   switch (mode) {
     case 0:
       RotateMode = VELOCITY;
@@ -108,20 +138,19 @@ void serialEvent() {
       gripper.SetMode(MANUAL);
       break;
     case 4:
-
       // this might cause an issue trying to left shift a char
       RotateMode = POSITION;
-      RotateSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      RotateSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
       rotate.SetMode(AUTOMATIC);
       break;
     case 5:
       LowerMode = POSITION;
-      LowerSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      LowerSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
       lower.SetMode(AUTOMATIC);
       break;
     case 6:
       UpperMode = POSITION;
-      UpperSetpoint = map(first << 4 + second, 0, 65535, -180, 180);
+      UpperSetpoint = first;//map(first << 4 + second, 0, 65535, -180, 180);
       upper.SetMode(AUTOMATIC);
       break;
   };
@@ -133,7 +162,6 @@ void UpdateRotate() {
   LatestValue = RotateFeedback();
   if (RotateMode == VELOCITY) {
     RotateInput = LatestValue - LastValue;
-    
   }
   else if (RotateMode == POSITION) {
     RotateInput = LatestValue;
@@ -145,7 +173,7 @@ void UpdateRotate() {
 void UpdateLower() {
   static double LastValue = 0;
   static double LatestValue = 0;
-  LatestValue = RotateFeedback();
+  LatestValue = LowerFeedback();
   if (LowerMode == VELOCITY) {
     LowerInput = LatestValue - LastValue;
   }
@@ -186,47 +214,64 @@ void UpdateGripper() {
 }
 
 double RotateFeedback() {
-  // have specific feedback for the rotation joint here
-  return 0.0;
+//rotates negative until it hits the limit switch, then roates to 0 and sets zero
+//had some werid behaviour trying to set zero at -180.
+  double current;
+  if(!rotateZeroSet) {
+    rotateStepper.step(-1);
+    rotateLimitState = digitalRead(rotateLimitPin);
+    if (rotateLimitState == LOW) {
+      delay(100); //delay to reducce jerk of stepper. Smooth velocity curve would be better, or lost step detection.
+      rotateStepper.step(400);
+      rotateCurrentSteps = 0;
+      rotateZeroSet = 1;
+    }
+  }
+  current = rotateCurrentSteps/800*360;
+
+  return current;
 }
 
 double LowerFeedback() {
   /*
-   * 0    Lowerbound on ADC input
-   * 1024 Upperbound on ADC input
-   * 15   Lowerbound on Lower Angle
-   * 50   Upperbound on Lower Angle
-   */
-  return map(analogRead(LOWERFEEDBACKPIN),0,1024,15,50);
+     0    Lowerbound on ADC input
+     1024 Upperbound on ADC input
+     15   Lowerbound on Lower Angle
+     50   Upperbound on Lower Angle
+  */
+  return map(analogRead(LOWERFEEDBACKPIN), 0, 1024, 15, 50);
 }
 
 double UpperFeedback() {
   /*
-   * 0    Lowerbound on ADC input
-   * 1024 Upperbound on ADC input
-   * 30   Lowerbound on Lower Angle
-   * 80   Upperbound on Lower Angle
-   */
-  return map(analogRead(UPPERFEEDBACKPIN),0,1024,30,80);
+     0    Lowerbound on ADC input
+     1024 Upperbound on ADC input
+     30   Lowerbound on Lower Angle
+     80   Upperbound on Lower Angle
+  */
+  return map(analogRead(UPPERFEEDBACKPIN), 0, 1024, 30, 80);
 
 }
 double GripperFeedback() {
   // have specific feedback for the gripper joint here
   return 0.0;
 }
-void OutputRotate(){
-  // have specific output for the rotate joint here
+void OutputRotate() {
+  int steps;
+  steps = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
+  rotateCurrentSteps = rotateCurrentSteps + steps;
+  rotateStepper.step(steps);
 }
 
-void OutputLower(){
-  // have specific output for the lower joint here  
+void OutputLower() {
+  // have specific output for the lower joint here
+
 }
 
-void OutputUpper(){
+void OutputUpper() {
   // have specific output for the upper joint here
 }
 
-void OutputGripper(){
+void OutputGripper() {
   // have specific output for the gripper joint here
 }
-
