@@ -29,23 +29,6 @@
 
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
-<<<<<<< HEAD
-#define stepsPerRevolution 800
-int rotateCurrentSteps {0};
-bool rotateZeroSet {0};
-int rotateLimitState {0};
-int stepsToRotate;
-Stepper rotateStepper(stepsPerRevolution, 9, 10, 11, 12);
-
-//Lower Joint linear actuator Settings
-#define LOWEREXTEND 7
-#define LOWERRETRACT 8
-
-//Upper Joint linear actuator Settings
-#define UPPEREXTEND 5
-#define UPPERRETRACT 6
-
-=======
 const int stepsPerRevolution {800};
 int rotateCurrentSteps {0};
 bool rotateZeroSet {0};
@@ -56,7 +39,6 @@ Stepper rotateStepper(stepsPerRevolution, 9, 10, 11, 12);
 #define LOWEREXTEND 7
 #define LOWERRETRACT 8
 
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
 
 
 double LastMessageReceived = 0;
@@ -106,19 +88,6 @@ void setup() {
   pinMode(rotateLimitPin, INPUT);
   rotateStepper.setSpeed(60);
 
-<<<<<<< HEAD
-  //Lower Linear Actuator Setup
-  pinMode(LOWEREXTEND, OUTPUT);
-  pinMode(LOWERRETRACT, OUTPUT);
-  lower.SetOutputLimits(-255, 255);
-
-  //Upper Linear Actuator Setup
-  pinMode(UPPEREXTEND, OUTPUT);
-  pinMode(UPPERRETRACT, OUTPUT);
-  upper.SetOutputLimits(-255,255);
-
-=======
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
 
 }
 
@@ -133,12 +102,8 @@ void serialEvent() {
 
   unsigned char mode, first, second, third;
 
-<<<<<<< HEAD
-  //adding the > 3 made data more reliable. Is it possible to add into the serialEvent function?
-=======
 //adding the > 3 made data more reliable. Is it possible to add into the serialEvent
 //function?
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
   if (Serial.available() > 3) {
     mode = Serial.read();
     first  = Serial.read();
@@ -175,20 +140,12 @@ void serialEvent() {
     case 4:
       // this might cause an issue trying to left shift a char
       RotateMode = POSITION;
-<<<<<<< HEAD
-      RotateSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
-=======
       RotateSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
       rotate.SetMode(AUTOMATIC);
       break;
     case 5:
       LowerMode = POSITION;
-<<<<<<< HEAD
-      LowerSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
-=======
       LowerSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
       lower.SetMode(AUTOMATIC);
       break;
     case 6:
@@ -257,17 +214,10 @@ void UpdateGripper() {
 }
 
 double RotateFeedback() {
-<<<<<<< HEAD
-  //rotates negative until it hits the limit switch, then roates to 0 and sets zero
-  //had some werid behaviour trying to set zero at -180.
-  static double current;
-  if (!rotateZeroSet) {
-=======
 //rotates negative until it hits the limit switch, then roates to 0 and sets zero
 //had some werid behaviour trying to set zero at -180.
   double current;
   if(!rotateZeroSet) {
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
     rotateStepper.step(-1);
     rotateLimitState = digitalRead(rotateLimitPin);
     if (rotateLimitState == LOW) {
@@ -276,19 +226,9 @@ double RotateFeedback() {
       rotateCurrentSteps = 0;
       rotateZeroSet = 1;
     }
-<<<<<<< HEAD
-
-  } else {
-    stepsToRotate = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
-    rotateCurrentSteps = rotateCurrentSteps + stepsToRotate;
-  }
-
-  current = rotateCurrentSteps / 800 * 360;
-=======
   }
   current = rotateCurrentSteps/800*360;
 
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
   return current;
 }
 
@@ -317,20 +257,6 @@ double GripperFeedback() {
   return 0.0;
 }
 void OutputRotate() {
-<<<<<<< HEAD
-  //rotates stepper number of steps found in feedback
-  rotateStepper.step(stepsToRotate);
-}
-
-void OutputLower() {
-  //checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
-  //If not working, check pins for both feedback and power to linear actuator are correct first.
-  if (LowerOutput < 0) {
-    analogWrite(LOWERRETRACT, LowerOutput);
-  } else {
-    analogWrite(LOWEREXTEND, LowerOutput);
-  }
-=======
   int steps;
   steps = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
   rotateCurrentSteps = rotateCurrentSteps + steps;
@@ -339,22 +265,11 @@ void OutputLower() {
 
 void OutputLower() {
   // have specific output for the lower joint here
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
 
 }
 
 void OutputUpper() {
-<<<<<<< HEAD
-    //Checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
-    //If not working, check pins for both feedback and power to linear actuator are correct first.
-  if (UpperOutput < 0) {
-    analogWrite(UPPERRETRACT, UpperOutput);
-  } else {
-    analogWrite(UPPEREXTEND, UpperOutput);
-  }
-=======
   // have specific output for the upper joint here
->>>>>>> a6b1f6cbbb0974b08679644425179e4cc81db6c7
 }
 
 void OutputGripper() {
