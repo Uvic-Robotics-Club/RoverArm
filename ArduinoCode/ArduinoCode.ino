@@ -164,7 +164,7 @@ void serialEvent() {
       break;
     case 6:
       UpperMode = POSITION;
-      UpperSetpoint = first;//map(first << 4 + second, 0, 65535, -180, 180);
+      UpperSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
       upper.SetMode(AUTOMATIC);
       break;
   };
