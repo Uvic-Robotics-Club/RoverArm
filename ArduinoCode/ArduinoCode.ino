@@ -29,15 +29,20 @@
 
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
-const int stepsPerRevolution {800};
+#define stepsPerRevolution 800
 int rotateCurrentSteps {0};
 bool rotateZeroSet {0};
 int rotateLimitState {0};
+int stepsToRotate;
 Stepper rotateStepper(stepsPerRevolution, 9, 10, 11, 12);
 
-//Lower Joint linear Actuator Power Pins
+//Lower Joint linear actuator Settings
 #define LOWEREXTEND 7
 #define LOWERRETRACT 8
+
+//Upper Joint linear actuator Settings
+#define UPPEREXTEND 5
+#define UPPERRETRACT 6
 
 
 
@@ -88,6 +93,16 @@ void setup() {
   pinMode(rotateLimitPin, INPUT);
   rotateStepper.setSpeed(60);
 
+  //Lower Linear Actuator Setup
+  pinMode(LOWEREXTEND, OUTPUT);
+  pinMode(LOWERRETRACT, OUTPUT);
+  lower.SetOutputLimits(-255, 255);
+
+  //Upper Linear Actuator Setup
+  pinMode(UPPEREXTEND, OUTPUT);
+  pinMode(UPPERRETRACT, OUTPUT);
+  upper.SetOutputLimits(-255,255);
+
 
 }
 
@@ -102,8 +117,7 @@ void serialEvent() {
 
   unsigned char mode, first, second, third;
 
-//adding the > 3 made data more reliable. Is it possible to add into the serialEvent
-//function?
+  //adding the > 3 made data more reliable. Is it possible to add into the serialEvent function?
   if (Serial.available() > 3) {
     mode = Serial.read();
     first  = Serial.read();
@@ -140,17 +154,17 @@ void serialEvent() {
     case 4:
       // this might cause an issue trying to left shift a char
       RotateMode = POSITION;
-      RotateSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
+      RotateSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
       rotate.SetMode(AUTOMATIC);
       break;
     case 5:
       LowerMode = POSITION;
-      LowerSetpoint = (double)map((uint16_t)first<<8|(uint16_t)second,0,65536,-360,360);
+      LowerSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
       lower.SetMode(AUTOMATIC);
       break;
     case 6:
       UpperMode = POSITION;
-      UpperSetpoint = first;//map(first << 4 + second, 0, 65535, -180, 180);
+      UpperSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
       upper.SetMode(AUTOMATIC);
       break;
   };
@@ -214,10 +228,10 @@ void UpdateGripper() {
 }
 
 double RotateFeedback() {
-//rotates negative until it hits the limit switch, then roates to 0 and sets zero
-//had some werid behaviour trying to set zero at -180.
-  double current;
-  if(!rotateZeroSet) {
+  //rotates negative until it hits the limit switch, then roates to 0 and sets zero
+  //had some werid behaviour trying to set zero at -180.
+  static double current;
+  if (!rotateZeroSet) {
     rotateStepper.step(-1);
     rotateLimitState = digitalRead(rotateLimitPin);
     if (rotateLimitState == LOW) {
@@ -226,9 +240,13 @@ double RotateFeedback() {
       rotateCurrentSteps = 0;
       rotateZeroSet = 1;
     }
-  }
-  current = rotateCurrentSteps/800*360;
 
+  } else {
+    stepsToRotate = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
+    rotateCurrentSteps = rotateCurrentSteps + stepsToRotate;
+  }
+
+  current = rotateCurrentSteps / 800 * 360;
   return current;
 }
 
@@ -257,19 +275,29 @@ double GripperFeedback() {
   return 0.0;
 }
 void OutputRotate() {
-  int steps;
-  steps = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
-  rotateCurrentSteps = rotateCurrentSteps + steps;
-  rotateStepper.step(steps);
+  //rotates stepper number of steps found in feedback
+  rotateStepper.step(stepsToRotate);
 }
 
 void OutputLower() {
-  // have specific output for the lower joint here
+  //checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
+  //If not working, check pins for both feedback and power to linear actuator are correct first.
+  if (LowerOutput < 0) {
+    analogWrite(LOWERRETRACT, LowerOutput);
+  } else {
+    analogWrite(LOWEREXTEND, LowerOutput);
+  }
 
 }
 
 void OutputUpper() {
-  // have specific output for the upper joint here
+    //Checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
+    //If not working, check pins for both feedback and power to linear actuator are correct first.
+  if (UpperOutput < 0) {
+    analogWrite(UPPERRETRACT, UpperOutput);
+  } else {
+    analogWrite(UPPEREXTEND, UpperOutput);
+  }
 }
 
 void OutputGripper() {
