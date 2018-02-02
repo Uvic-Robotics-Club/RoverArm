@@ -78,6 +78,7 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
 
   uint8_t rotDir = abs(rotate);
 
+  //I switched this to magnitude and direction just for my testing as it made more sense to me, let me know what you think
   // [mode, mag, dir, nothing]
   data_to_send[0] = 0;
   if(rotate>0){
