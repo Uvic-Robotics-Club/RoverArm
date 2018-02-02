@@ -75,14 +75,17 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   rotate = round(newdata_to_send->joint.rotate*255.0*newdata_to_send->enable.rotate);
   lower = round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper = round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
-  // [mode, value-, value+, nothing]
+
+  uint8_t rotDir = abs(rotate);
+
+  // [mode, mag, dir, nothing]
   data_to_send[0] = 0;
   if(rotate>0){
-    data_to_send[1] = 0;
-    data_to_send[2] = (uint8_t)abs(rotate);
+    data_to_send[1] = rotDir;
+    data_to_send[2] = 1;
   }
   else{
-    data_to_send[1] = (uint8_t)abs(rotate);
+    data_to_send[1] = rotDir;
     data_to_send[2] = 0;
   }
   sendToArm();
@@ -157,11 +160,11 @@ int main(int argc, char **argv){
   ros::Subscriber joySub = nh.subscribe("Arm/AngleVelocities",1,setVelocity);
   ros::Subscriber progSub = nh.subscribe("Arm/Position",1,setPosition);
   armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",20);
-  //nh.param<std::string>("~USBPORT", usbPort, "/dev/ttyACM0");
+  //nh.param<std::string>("USBPORT", usbPort, "/dev/ttyACM0");
 
 
   //Slight re-write for opening serial port; This method gave me the most stability on my machine.
-  if (pnh.hasParam("output_type")){
+  if (!pnh.hasParam("output_type")){
     output_to_serial=false;
   }
   else{
