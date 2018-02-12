@@ -24,11 +24,13 @@
 
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
-#define stepsPerRevolution 800
+#define stepsPerRevolution 6400
+double RotateCurrent;  //current angle
 int rotateCurrentSteps {0};
 bool rotateZeroSet {0};
 int rotateLimitState {0};
 int stepsToRotate;
+int rotateDir;
 Stepper rotateStepper(stepsPerRevolution, 9, 10, 11, 12);
 
 //Lower Joint linear actuator Settings
@@ -96,12 +98,19 @@ void setup() {
   //Upper Linear Actuator Setup
   pinMode(UPPEREXTEND, OUTPUT);
   pinMode(UPPERRETRACT, OUTPUT);
-  upper.SetOutputLimits(-255,255);
+  upper.SetOutputLimits(-255, 255);
+
+  //testLED
+  pinMode(13, OUTPUT);
 
 
 }
 
 void loop() {
+
+  if (rotateCurrentSteps == 0) digitalWrite(13, HIGH);
+  else digitalWrite(13, LOW);
+
   UpdateRotate();
   UpdateLower();
   UpdateUpper();
@@ -124,7 +133,10 @@ void serialEvent() {
   switch (mode) {
     case 0:
       RotateMode = VELOCITY;
-      RotateSetpoint = -1 * first + second; //[rotate-,rotate+]
+      RotateSetpoint = first;
+      if (second == 0) {
+        rotateDir = -1;
+      } else rotateDir = 1;
       RotateOutput = RotateSetpoint;
       rotate.SetMode(MANUAL);
       break;
@@ -149,6 +161,7 @@ void serialEvent() {
     case 4:
       // this might cause an issue trying to left shift a char
       RotateMode = POSITION;
+      rotateStepper.setSpeed(60);
       RotateSetpoint = (double)map((uint16_t)first << 8 | (uint16_t)second, 0, 65536, -360, 360);
       rotate.SetMode(AUTOMATIC);
       break;
@@ -225,24 +238,33 @@ void UpdateGripper() {
 double RotateFeedback() {
   //rotates negative until it hits the limit switch, then roates to 0 and sets zero
   //had some werid behaviour trying to set zero at -180.
-  static double current;
   if (!rotateZeroSet) {
     rotateStepper.step(-1);
     rotateLimitState = digitalRead(rotateLimitPin);
     if (rotateLimitState == LOW) {
       delay(100); //delay to reducce jerk of stepper. Smooth velocity curve would be better, or lost step detection.
-      rotateStepper.step(400);
+      rotateStepper.step(stepsPerRevolution / 2);
       rotateCurrentSteps = 0;
       rotateZeroSet = 1;
     }
 
   } else {
-    stepsToRotate = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
-    rotateCurrentSteps = rotateCurrentSteps + stepsToRotate;
+    if (RotateMode == VELOCITY) {
+      if (rotateCurrentSteps > stepsPerRevolution / 2 && rotateDir == 1) {
+        RotateSetpoint = 0;
+      }
+      if (rotateCurrentSteps < -1 * stepsPerRevolution / 2 && rotateDir == -1) {
+        RotateSetpoint = 0;
+      }
+      rotateStepper.setSpeed(RotateSetpoint);
+    } else {
+      stepsToRotate = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
+      rotateCurrentSteps = rotateCurrentSteps + stepsToRotate;
+      RotateCurrent = rotateCurrentSteps / stepsPerRevolution * 360;
+    }
   }
 
-  current = rotateCurrentSteps / 800 * 360;
-  return current;
+  return RotateCurrent;
 }
 
 double LowerFeedback() {
@@ -271,7 +293,14 @@ double GripperFeedback() {
 }
 void OutputRotate() {
   //rotates stepper number of steps found in feedback
-  rotateStepper.step(stepsToRotate);
+  if (RotateMode == VELOCITY) {
+    if (RotateSetpoint != 0) {
+      //included counting steps here due to problem of missed steps. This seems to have fixed it. Further testing required.
+      rotateStepper.step(rotateDir * 10);
+      rotateCurrentSteps = rotateCurrentSteps + rotateDir * 10;
+      RotateCurrent = rotateCurrentSteps / stepsPerRevolution * 360;
+    }
+  } else rotateStepper.step(stepsToRotate);
 }
 
 void OutputLower() {
@@ -286,8 +315,8 @@ void OutputLower() {
 }
 
 void OutputUpper() {
-    //Checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
-    //If not working, check pins for both feedback and power to linear actuator are correct first.
+  //Checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
+  //If not working, check pins for both feedback and power to linear actuator are correct first.
   if (UpperOutput < 0) {
     analogWrite(UPPERRETRACT, UpperOutput);
   } else {
