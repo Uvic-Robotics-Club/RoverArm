@@ -1,3 +1,6 @@
 [submodule "Utilities"]
 	path = Utilities
 	url = https://github.com/Uvic-Robotics-Club/Utilities
+[submodule "Arduino-PID-Library"]
+	path = Arduino-PID-Library
+	url = https://github.com/br3ttb/Arduino-PID-Library/
