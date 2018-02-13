@@ -99,9 +99,9 @@ void loop() {
   //UpdateLower();
   //UpdateUpper();
   //UpdateGripper();
-  lower.Update(); // this is empty right now
-  upper.Update(); // this is empty right now
-  delay(100);
+  //lower.Update(); // this is empty right now
+  //upper.Update(); // this is empty right now
+  delay(50);
 }
 
 void serialEvent() {
@@ -110,69 +110,73 @@ void serialEvent() {
   int mode, value;
   String mode_string, value_string;
 
-  //adding the > 8 made data more reliable. Is it possible to add into the serialEvent function?
-  if (Serial.available() >= 8) {
-    wholeThing();
-    // this is to prevent a partial message
-    if(inputString.charAt(0) == '[' and inputString.endsWith("]")){
-      int comma = inputString.indexOf(',');
-      mode_string = inputString.substring(1, comma);
-      mode = mode_string.toInt();
-      value_string = inputString.substring(comma+1,inputString.length()-1);
-      value = value_string.toInt();
+  if(Serial.find("M:")){
+
+    mode = Serial.parseInt();
+    if(Serial.find("V:")){
+      value = Serial.parseInt();
     }
     else{
       return;
     }
+  }else{return;}
+
+  if(true or Serial.read() == '\n'){
 
 
     LastMessageReceived = millis();
-    //char buffer[30];
-    //sprintf(buffer, "M:%i | V: %i ", mode ,value);
-    //Serial.flush();
-    //Serial.println(buffer);
-    //Serial.flush();
-  }
-  else {
-    return;
-  }
 
-  switch (mode) {
-  case 0:
-    RotateMode = VELOCITY;
-    RotateSetpoint = inputString.toInt();
-    RotateOutput = RotateSetpoint;
-    rotate.SetMode(MANUAL);
-    break;
-  case 1:
-    lower.manual(value);
-    break;
-  case 2:
-    upper.manual(value);
-    break;
-  case 3:
-    GripperMode = VELOCITY;
-    GripperSetpoint = inputString.toInt(); //[gripper-,gripper+]
-    GripperOutput = GripperSetpoint;
-    gripper.SetMode(MANUAL);
-    break;
-  case 4:
-    // this might cause an issue trying to left shift a char
-    RotateMode = POSITION;
-    //temp = first<<8;
-    //temp = temp + second;
-    RotateSetpoint = map(inputString.toInt(), 0, 65536, -360, 360);
-    rotate.SetMode(AUTOMATIC);
-    break;
-  case 5:
-    lower.EnablePID();
-    lower.SetSetpoint(value);
-    break;
-  case 6:
-    upper.EnablePID();
-    upper.SetSetpoint(value);
-    break;
-  };
+    char buffer[30];
+    sprintf(buffer, "M:%i | V: %i ", mode ,value);
+    /*
+     Serial.print("M: ");
+     Serial.print(mode_string);
+     Serial.print(" V: ");
+     Serial.print(value_string);
+     */
+    Serial.println(buffer);
+    Serial.flush();
+
+
+    switch (mode) {
+    case 0:
+      RotateMode = VELOCITY;
+      RotateSetpoint = inputString.toInt();
+      RotateOutput = RotateSetpoint;
+      rotate.SetMode(MANUAL);
+      break;
+    case 1:
+      lower.manual(value);
+      break;
+    case 2:
+      //Serial.print("In case 2, and value 2 is ");
+      //Serial.println(value);
+      upper.manual(value);
+      break;
+    case 3:
+      GripperMode = VELOCITY;
+      GripperSetpoint = inputString.toInt(); //[gripper-,gripper+]
+      GripperOutput = GripperSetpoint;
+      gripper.SetMode(MANUAL);
+      break;
+    case 4:
+      // this might cause an issue trying to left shift a char
+      RotateMode = POSITION;
+      //temp = first<<8;
+      //temp = temp + second;
+      RotateSetpoint = map(inputString.toInt(), 0, 65536, -360, 360);
+      rotate.SetMode(AUTOMATIC);
+      break;
+    case 5:
+      lower.EnablePID();
+      lower.SetSetpoint(value);
+      break;
+    case 6:
+      upper.EnablePID();
+      upper.SetSetpoint(value);
+      break;
+    };
+  }
 }
 
 void UpdateRotate() {
@@ -259,3 +263,7 @@ void wholeThing() {
     inputString += inChar;
   }
 }
+
+
+
+

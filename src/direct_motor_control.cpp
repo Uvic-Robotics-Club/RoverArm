@@ -18,6 +18,9 @@ ros::Publisher armPub;
 bool output_to_serial = true;
 
 int data_to_send[] = {0,0,0,0};
+int rotate = 0;
+int lower = 0;
+int upper = 0;
 
 double mapValue(double x, double in_min, double in_max, double out_min, double out_max)
 {
@@ -26,16 +29,29 @@ double mapValue(double x, double in_min, double in_max, double out_min, double o
 
 
 void sendToArm(){
-	
+	static std::string data_returned = "";
     geometry_msgs::QuaternionStamped diagnostics_msg;
+    
+    while(ser.available()>=1){
+		data_returned = "";
+		ser.readline(data_returned);
+		ROS_ERROR_STREAM("Arduino->" << data_returned);
+	}
 
     if(output_to_serial){
         ser.flush();
-        char buffer[10];
-        sprintf(buffer, "[%i,%i]\n", data_to_send[0], data_to_send[1]);
+        char buffer[30];
+        sprintf(buffer, "M:%i V:%i\n", 0, data_to_send[1]);
         ser.write(buffer);
         ser.flush();
-        ROS_ERROR_STREAM("Program -> "<<buffer);
+        sprintf(buffer, "M:%i V:%i\n", 1, data_to_send[2]);
+        ser.write(buffer);
+        ser.flush();
+        sprintf(buffer, "M:%i V:%i\n", 2, data_to_send[3]);
+        ser.write(buffer);
+        ser.flush();
+        //ser.flush();
+        //ROS_ERROR_STREAM("Program -> "<<buffer);
         //data_to_send[0]=0;
         //data_to_send[1]=0;
 			
@@ -79,28 +95,10 @@ void sendToArm(){
 
 
 void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
-  static int rotate = 0;
-  static int lower = 0;
-  static int upper = 0;
-
   rotate = (int)round(newdata_to_send->joint.rotate*255.0*newdata_to_send->enable.rotate);
   lower =  (int)round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
-  
-  
-
-  // [mode, mag, dir, nothing]
-  data_to_send[0] = 0;
-  data_to_send[1] = rotate;
-  sendToArm();
-
-  data_to_send[0] = 1;
-  data_to_send[1] = lower;
-  sendToArm();
-
-  data_to_send[0] = 2;
-  data_to_send[1] = upper;
-  sendToArm();
+ 
   
   char buffer [50];
   sprintf(buffer,"R: %i | LOWER: %i | UPPER: %i", rotate, lower, upper);
@@ -147,7 +145,7 @@ void setPosition(const RoverArm::joint_angles::ConstPtr& newdata_to_send){
 
 
 int main(int argc, char **argv){
-  std::string data_returned = "";
+  
   //Initialize ROS node
   ros::init(argc,argv,"DirectMotorControl");
   ros::NodeHandle nh;
@@ -186,14 +184,16 @@ int main(int argc, char **argv){
   }
 
   ROS_INFO("CONNECTED TO THE ARDUINO");
-  ros::Rate loop_rate(20);
+  ros::Rate loop_rate(5);
   while(ros::ok()){
-	if(ser.available()>=1){
-		data_returned = "";
-		ser.readline(data_returned);
-		ROS_ERROR_STREAM("Arduino->" << data_returned);
-	}
-    ros::spinOnce();
+	ros::spinOnce();
+	// [mode, mag, dir, nothing]
+	data_to_send[0] = 0;
+	data_to_send[1] = rotate;
+	data_to_send[2] = lower;
+	data_to_send[3] = upper;
+	sendToArm();
+  
     loop_rate.sleep();
   }
 }
