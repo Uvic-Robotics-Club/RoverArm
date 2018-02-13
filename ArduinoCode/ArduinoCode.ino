@@ -1,5 +1,6 @@
-#include "PID_v1.h"
 #include <Stepper.h>
+#include "PID_v1.h"
+#include "Linear_Actuator.h"
 
 /*
    This will control 4 joints
@@ -39,13 +40,13 @@ Stepper rotateStepper(stepsPerRevolution, 4, 7, 8, 9);
 
 //Lower Joint linear actuator Settings
 // pins 10 and 11 for uno and nano
-#define LOWEREXTEND 10
-#define LOWERRETRACT 11
+#define LOWER_PWM 10
+#define LOWER_DIR 11
 
 //Upper Joint linear actuator Settings
 // pins 5 and 6 for uno and nano
-#define UPPEREXTEND 5
-#define UPPERRETRACT 6
+#define UPPER_PWM 5
+#define UPPER_DIR 6
 
 
 
@@ -57,16 +58,10 @@ int RotateMode = VELOCITY;
 PID rotate(&RotateInput, &RotateOutput, &RotateSetpoint, RotateKp, RotateKi, RotateKd, P_ON_E, DIRECT); //P_ON_E (Proportional on Error) is the default behavior
 
 #define LOWERFEEDBACKPIN A0
-double LowerSetpoint, LowerInput, LowerOutput;
-double LowerKp = 0.1, LowerKi = 1, LowerKd = 0;
-int LowerMode = VELOCITY;
-PID lower(&LowerInput, &LowerOutput, &LowerSetpoint, LowerKp, LowerKi, LowerKd, P_ON_E, DIRECT); //P_ON_E (Proportional on Error) is the default behavior
+LinearActuator lower(LOWER_PWM,LOWER_DIR,LOWERFEEDBACKPIN);
 
 #define UPPERFEEDBACKPIN A1
-double UpperSetpoint, UpperInput, UpperOutput;
-double UpperKp = 0.1, UpperKi = 1, UpperKd = 0;
-int UpperMode = VELOCITY;
-PID upper(&UpperInput, &UpperOutput, &UpperSetpoint, UpperKp, UpperKi, UpperKd, P_ON_E, DIRECT); //P_ON_E (Proportional on Error) is the default behavior
+LinearActuator upper(UPPER_PWM,UPPER_DIR,UPPERFEEDBACKPIN);
 
 double GripperSetpoint, GripperInput, GripperOutput;
 double GripperKp = 0.1, GripperKi = 1, GripperKd = 0;
@@ -74,18 +69,11 @@ int GripperMode = VELOCITY;
 PID gripper(&GripperInput, &GripperOutput, &GripperSetpoint, GripperKp, GripperKi, GripperKd, P_ON_E, DIRECT); //P_ON_E (Proportional on Error) is the default behavior
 
 void UpdateRotate();
-void UpdateLower();
-void UpdateUpper();
 void UpdateGripper();
 double RotateFeedback();
-double LowerFeedback();
-double UpperFeedback();
 double GripperFeedback();
 void OutputRotate();
-void OutputLower();
-void OutputUpper();
 void OutputGripper();
-
 
 
 void setup() {
@@ -97,13 +85,10 @@ void setup() {
   rotateStepper.setSpeed(60);
 
   //Lower Linear Actuator Setup
-  pinMode(LOWEREXTEND, OUTPUT);
-  pinMode(LOWERRETRACT, OUTPUT);
-  lower.SetOutputLimits(-255, 255);
+  // pins setup inside the class
+  lower.SetOutputLimits(-255,255);
 
   //Upper Linear Actuator Setup
-  pinMode(UPPEREXTEND, OUTPUT);
-  pinMode(UPPERRETRACT, OUTPUT);
   upper.SetOutputLimits(-255,255);
 
 
@@ -114,6 +99,9 @@ void loop() {
   //UpdateLower();
   //UpdateUpper();
   //UpdateGripper();
+  lower.Update(); // this is empty right now
+  upper.Update(); // this is empty right now
+  delay(100);
 }
 
 void serialEvent() {
@@ -122,44 +110,32 @@ void serialEvent() {
   int mode, value;
   String mode_string, value_string;
 
-  //adding the > 3 made data more reliable. Is it possible to add into the serialEvent function?
+  //adding the > 8 made data more reliable. Is it possible to add into the serialEvent function?
   if (Serial.available() >= 8) {
     wholeThing();
+    // this is to prevent a partial message
     if(inputString.charAt(0) == '[' and inputString.endsWith("]")){
       int comma = inputString.indexOf(',');
       mode_string = inputString.substring(1, comma);
       mode = mode_string.toInt();
-    //mode = inputString.toInt();
       value_string = inputString.substring(comma+1,inputString.length()-1);
       value = value_string.toInt();
-      //Serial.println(inputString);
-      //Serial.print("Mode String: ");
-      //Serial.print(mode_string);
-      //Serial.print(" | Value String: ");
-      //Serial.println(value_string);
-      
-      
-      
     }
     else{
       return;
     }
-      
-    //wholeThing();
-    //value = inputString.toInt();
+
+
     LastMessageReceived = millis();
-    char buffer[30];
-    sprintf(buffer, "M:%i | V: %i ", mode ,value);
-    Serial.flush();
-    Serial.println(buffer);
-    Serial.flush();
-  } 
+    //char buffer[30];
+    //sprintf(buffer, "M:%i | V: %i ", mode ,value);
+    //Serial.flush();
+    //Serial.println(buffer);
+    //Serial.flush();
+  }
   else {
     return;
   }
-  //mode -= '0';
-
-  
 
   switch (mode) {
   case 0:
@@ -169,36 +145,10 @@ void serialEvent() {
     rotate.SetMode(MANUAL);
     break;
   case 1:
-    LowerMode = VELOCITY;
-    LowerSetpoint = value;
-    Serial.print("I AM IN MODE 1 and Value is ");
-    Serial.println(value);
-    if(LowerSetpoint>0){
-      analogWrite(LOWEREXTEND,abs(LowerSetpoint));
-      analogWrite(LOWERRETRACT, 0);
-    }
-    else{
-      analogWrite(LOWERRETRACT,abs(LowerSetpoint));
-      analogWrite(LOWEREXTEND, 0);
-    }
-    LowerOutput = LowerSetpoint;
-    lower.SetMode(MANUAL);
+    lower.manual(value);
     break;
   case 2:
-    UpperMode = VELOCITY;
-    UpperSetpoint = value; //[upper-,upper+]
-    Serial.print("I AM IN MODE 2 and Value is ");
-    Serial.println(value);
-    if(UpperSetpoint>0){
-      analogWrite(UPPEREXTEND,abs(UpperSetpoint));
-      analogWrite(UPPERRETRACT, 0);
-    }
-    else{
-      analogWrite(UPPERRETRACT,abs(UpperSetpoint));
-      analogWrite(UPPEREXTEND, 0);
-    }
-    UpperOutput = UpperSetpoint;
-    upper.SetMode(MANUAL);
+    upper.manual(value);
     break;
   case 3:
     GripperMode = VELOCITY;
@@ -215,18 +165,12 @@ void serialEvent() {
     rotate.SetMode(AUTOMATIC);
     break;
   case 5:
-    LowerMode = POSITION;
-    //temp = first<<8;
-    //temp = temp + second;
-    LowerSetpoint = map(inputString.toInt(), 0, 65536, -360, 360);
-    lower.SetMode(AUTOMATIC);
+    lower.EnablePID();
+    lower.SetSetpoint(value);
     break;
   case 6:
-    UpperMode = POSITION;
-    //temp = first<<8;
-    //temp = temp + second;
-    UpperSetpoint = map(inputString.toInt(), 0, 65536, -360, 360);
-    upper.SetMode(AUTOMATIC);
+    upper.EnablePID();
+    upper.SetSetpoint(value);
     break;
   };
 }
@@ -241,37 +185,10 @@ void UpdateRotate() {
     RotateInput = LatestValue;
     rotate.Compute();
   }
-  
+
   OutputRotate();
 }
 
-void UpdateLower() {
-  static double LastValue = 0;
-  static double LatestValue = 0;
-  LatestValue = LowerFeedback();
-  if (LowerMode == VELOCITY) {
-  }
-  else if (LowerMode == POSITION) {
-    LowerInput = LatestValue;
-    lower.Compute();
-  }
-  
-  OutputLower();
-}
-
-void UpdateUpper() {
-  static double LastValue = 0;
-  static double LatestValue = 0;
-  LatestValue = RotateFeedback();
-  if (UpperMode == VELOCITY) {
-    UpperInput = LatestValue - LastValue;
-  }
-  else if (UpperMode == POSITION) {
-    UpperInput = LatestValue;
-  }
-  upper.Compute();
-  OutputUpper();
-}
 
 void UpdateGripper() {
   static double LastValue = 0;
@@ -302,7 +219,7 @@ double RotateFeedback() {
       rotateZeroSet = 1;
     }
 
-  } 
+  }
   else {
     stepsToRotate = RotateSetpoint * stepsPerRevolution / 360 - rotateCurrentSteps;
     rotateCurrentSteps = rotateCurrentSteps + stepsToRotate;
@@ -312,26 +229,9 @@ double RotateFeedback() {
   return current;
 }
 
-double LowerFeedback() {
-  /*
-     0    Lowerbound on ADC input
-   1024 Upperbound on ADC input
-   15   Lowerbound on Lower Angle
-   50   Upperbound on Lower Angle
-   */
-  return map(analogRead(LOWERFEEDBACKPIN), 0, 1024, 15, 50);
-}
 
-double UpperFeedback() {
-  /*
-     0    Lowerbound on ADC input
-   1024 Upperbound on ADC input
-   30   Lowerbound on Lower Angle
-   80   Upperbound on Lower Angle
-   */
-  return map(analogRead(UPPERFEEDBACKPIN), 0, 1024, 30, 80);
 
-}
+
 double GripperFeedback() {
   // have specific feedback for the gripper joint here
   return 0.0;
@@ -341,28 +241,6 @@ void OutputRotate() {
   rotateStepper.step(stepsToRotate);
 }
 
-void OutputLower() {
-  //checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
-  //If not working, check pins for both feedback and power to linear actuator are correct first.
-  if (LowerOutput < 0) {
-    analogWrite(LOWERRETRACT, LowerOutput);
-  } 
-  else {
-    analogWrite(LOWEREXTEND, LowerOutput);
-  }
-
-}
-
-void OutputUpper() {
-  //Checks pid for direction and power and sends to H-Bridge. May need to adjust bounds on PID depending on controller.
-  //If not working, check pins for both feedback and power to linear actuator are correct first.
-  if (UpperOutput < 0) {
-    analogWrite(UPPERRETRACT, UpperOutput);
-  } 
-  else {
-    analogWrite(UPPEREXTEND, UpperOutput);
-  }
-}
 
 void OutputGripper() {
   // have specific output for the gripper joint here
@@ -373,7 +251,7 @@ void wholeThing() {
   while (Serial.available()) {
     // get the new byte:
     char inChar = (char)Serial.read();
-    
+
     if (inChar == '\n'){
       return;
     }
@@ -381,4 +259,3 @@ void wholeThing() {
     inputString += inChar;
   }
 }
-
