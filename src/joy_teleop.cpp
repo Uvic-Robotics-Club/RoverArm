@@ -40,12 +40,18 @@ void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
   RoverArm::arm_velocity newMessage;
   if(joy->buttons[button_7]==1){
     rotate_enable = !rotate_enable;
+    if(rotate_enable){ROS_INFO("ROTATE ENABLED");}
+    else{ROS_INFO("ROTATE DISABLED");}
   }
   if(joy->buttons[button_9]==1){
     lower_enable = !lower_enable;
+    if(lower_enable){ROS_INFO("LOWER ENABLED");}
+    else{ROS_INFO("LOWER DISABLED");}
   }
   if(joy->buttons[button_11]==1){
     upper_enable = !upper_enable;
+    if(upper_enable){ROS_INFO("UPPER ENABLED");}
+    else{ROS_INFO("UPPER DISABLED");}
   }
   newMessage.enable.rotate = rotate_enable;
   newMessage.enable.lower = lower_enable;
@@ -55,7 +61,6 @@ void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
   newMessage.joint.upper = joy->axes[ud_hat]*joy->axes[slider];
   newMessage.joint.gripper = -1*joy->buttons[trigger]+joy->buttons[thumb_rest];
   anglePub.publish(newMessage);
-
 }
 
 
@@ -63,8 +68,8 @@ int main(int argc, char **argv){
 	//Initialize ROS node
 	ros::init(argc,argv,"Joy_Teleop");
 	ros::NodeHandle nh;
-  anglePub = nh.advertise<RoverArm::arm_velocity>("Arm/AngleVelocities",10);
-  ros::Subscriber joySub = nh.subscribe("arm_joy",10,joy_to_arm);
+  anglePub = nh.advertise<RoverArm::arm_velocity>("Arm/AngleVelocities",1);
+  ros::Subscriber joySub = nh.subscribe("arm_joy",1,joy_to_arm);
   ros::spin();
   return 0;
 }

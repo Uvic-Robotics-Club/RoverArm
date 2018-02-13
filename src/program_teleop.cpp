@@ -49,8 +49,8 @@ int main(int argc, char **argv){
 	//Initialize ROS node
 	ros::init(argc,argv,"Program_Teleop");
 	ros::NodeHandle nh;
-  ros::Subscriber joySub = nh.subscribe("Arm/Goal",10,prog_to_arm);
-  posPub = nh.advertise<RoverArm::joint_angles>("Arm/Position",10);
+  ros::Subscriber joySub = nh.subscribe("Arm/Goal",1,prog_to_arm);
+  posPub = nh.advertise<RoverArm::joint_angles>("Arm/Position",1);
   client = nh.serviceClient<RoverArm::point_to_angle>("arm_ik");
   ros::spin();
   return 0;

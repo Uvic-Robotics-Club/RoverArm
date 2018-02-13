@@ -1,13 +1,17 @@
 <launch>
 
     <node pkg="RoverArm" name="joy2dmc" type="joy_teleop" respawn="true" />
+    
     <node pkg="joy" name="Joystick" type="joy_node" respawn="true" >
       <remap from="joy" to="arm_joy" />
     </node>
+    
     <node pkg="RoverArm" name="dmc" type="direct_motor_control" respawn="true" >
-      <param name="output_type" value="virtual" />
+     
     </node>
+    
     <node pkg="RoverArm" name="test_service" type="inverse_kinematics.py" />
+    
     <node pkg="RoverArm" name="prog_to_arm" type="program_teleop" />
 
 
