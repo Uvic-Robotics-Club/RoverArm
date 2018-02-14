@@ -30,19 +30,6 @@ class MainScreen(QtGui.QMainWindow):
         timer.start(100)
 
 
-        self.mplwidget.axes=Axes3D(self.mplwidget.figure)
-
-        self.mplwidget.axes.plot([-.5,.5],[ 0,0],[0,0],color='k')
-        self.mplwidget.axes.plot([0,0],[ -.5,.5],[0,0],color='k')
-
-        self.mplwidget.axes.set_xlim((-10,10))
-        self.mplwidget.axes.set_ylim((-10,10))
-
-
-        self.mplwidget.axes.set_xlabel('x')
-        self.mplwidget.axes.set_ylabel('y')
-        self.mplwidget.axes.set_zlabel('z')
-
     def __internalClose__(self,button,value):
         '''
         this is an internal only method that closes the main window

@@ -22,9 +22,6 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="MatplotlibWidget" name="mplwidget"/>
-       </item>
-       <item>
         <widget class="QLabel" name="ImageLabel">
          <property name="text">
           <string>Picture Holder</string>
@@ -395,13 +392,6 @@
    </property>
   </action>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>MatplotlibWidget</class>
-   <extends>QWidget</extends>
-   <header>matplotlibwidget</header>
-  </customwidget>
- </customwidgets>
  <resources>
   <include location="../../PiFiles/Code for UI/Main Window Resource.qrc"/>
  </resources>
