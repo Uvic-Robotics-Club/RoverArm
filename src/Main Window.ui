@@ -248,12 +248,18 @@
              <property name="text">
               <string>Rotation Lock</string>
              </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QRadioButton" name="lower_lock">
              <property name="text">
               <string>Lower Lock</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
@@ -262,12 +268,18 @@
              <property name="text">
               <string>Upper Lock</string>
              </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QRadioButton" name="speed_lock">
              <property name="text">
               <string>Speed Lock</string>
+             </property>
+             <property name="autoExclusive">
+              <bool>false</bool>
              </property>
             </widget>
            </item>
