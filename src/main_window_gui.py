@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Created on Wed Feb 14 12:01:38 2018
 
@@ -8,9 +8,11 @@ Created on Wed Feb 14 12:01:38 2018
 from PyQt4 import QtCore, QtGui, uic  # Import the PyQt4 module we'll need
 import sys  # We need sys so that we can pass argv to QApplication
 import rospy
+import threading
+
 from RoverArm.msg import arm_velocity
 
-from mpl_toolkits.mplot3d import Axes3D
+
 
 global_msg = arm_velocity()
 
@@ -99,8 +101,6 @@ def StartROS():
 
 
 if __name__ == '__main__':  # if we're running file directly and not importing it
-    settings.init()
-
     t1 = threading.Thread(target=StartROS)
     t1.start()
     startGUI()
