@@ -40,8 +40,8 @@ Stepper rotateStepper(stepsPerRevolution, 4, 7, 8, 9);
 
 //Lower Joint linear actuator Settings
 // pins 10 and 11 for uno and nano
-#define LOWER_PWM 10
-#define LOWER_DIR 11
+#define LOWER_PWM 11
+#define LOWER_DIR 3
 
 //Upper Joint linear actuator Settings
 // pins 5 and 6 for uno and nano
@@ -116,9 +116,7 @@ void serialEvent() {
     if(Serial.find("V:")){
       value = Serial.parseInt();
     }
-    else{
-      return;
-    }
+    else{return;}
   }else{return;}
 
   if(true or Serial.read() == '\n'){

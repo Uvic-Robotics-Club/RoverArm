@@ -164,7 +164,7 @@ int main(int argc, char **argv){
   else{
       try
     {
-        ser.setPort("/dev/ttyACM0");
+        ser.setPort("/dev/ttyUSB0");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
