@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>861</width>
+    <height>726</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="2">
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="title">
+       <string>Live Preview</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="MatplotlibWidget" name="mplwidget"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="ImageLabel">
+         <property name="text">
+          <string>Picture Holder</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QTabWidget" name="tabWidget_3">
+      <property name="tabPosition">
+       <enum>QTabWidget::South</enum>
+      </property>
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <property name="movable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="tabWidget_3Page1">
+       <attribute name="title">
+        <string>Network Diagnostics</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout">
+        <property name="fieldGrowthPolicy">
+         <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="connected_label">
+          <property name="text">
+           <string>Connected:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="connected_value">
+          <property name="text">
+           <string>FALSE</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="IP_label">
+          <property name="text">
+           <string>IP:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLabel" name="IP_value">
+          <property name="text">
+           <string>NA</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QDial" name="top_left_dial">
+          <property name="minimum">
+           <number>-255</number>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="wrapping">
+           <bool>false</bool>
+          </property>
+          <property name="notchTarget">
+           <double>25.000000000000000</double>
+          </property>
+          <property name="notchesVisible">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QDial" name="top_right_dial">
+          <property name="minimum">
+           <number>-255</number>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="notchTarget">
+           <double>25.000000000000000</double>
+          </property>
+          <property name="notchesVisible">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QDial" name="bot_left_dial">
+          <property name="minimum">
+           <number>-255</number>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="notchTarget">
+           <double>25.000000000000000</double>
+          </property>
+          <property name="notchesVisible">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QDial" name="bot_right_dial">
+          <property name="minimum">
+           <number>-255</number>
+          </property>
+          <property name="maximum">
+           <number>255</number>
+          </property>
+          <property name="notchTarget">
+           <double>25.000000000000000</double>
+          </property>
+          <property name="notchesVisible">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QPushButton" name="startNetworkThread">
+          <property name="text">
+           <string>Start Network Threads</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QComboBox" name="qualityComboBox">
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>1080p</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>720p</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>480p</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>360p</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>240p</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Resolution of Camera Feed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Quality of Camera Feed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QSlider" name="qualitySlider">
+          <property name="minimum">
+           <number>10</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="singleStep">
+           <number>10</number>
+          </property>
+          <property name="value">
+           <number>90</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="tickPosition">
+           <enum>QSlider::TicksBelow</enum>
+          </property>
+          <property name="tickInterval">
+           <number>10</number>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0">
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>PushButton</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Arm Joystick Diagnositics</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QGroupBox" name="groupBox">
+          <property name="title">
+           <string>Locked Axis Status</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QRadioButton" name="rotation_lock">
+             <property name="text">
+              <string>Rotation Lock</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="lower_lock">
+             <property name="text">
+              <string>Lower Lock</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="upper_lock">
+             <property name="text">
+              <string>Upper Lock</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="speed_lock">
+             <property name="text">
+              <string>Speed Lock</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_3">
+          <property name="title">
+           <string>Axis Values</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <widget class="QSlider" name="lower_axis">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QSlider" name="gripper_axis">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QSlider" name="upper_axis">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QSlider" name="rotate_axis">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="4">
+            <widget class="QSlider" name="speed_axis">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Lower</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Upper</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Rotate</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>Gripper</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="4">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Speed</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>861</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_Setting">
+    <property name="title">
+     <string>&amp;Setting</string>
+    </property>
+    <addaction name="action_Controls"/>
+   </widget>
+   <addaction name="menu_Setting"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <action name="action_Controls">
+   <property name="text">
+    <string>&amp;Controls</string>
+   </property>
+  </action>
+  <action name="actionOther_Settings">
+   <property name="text">
+    <string>Other Settings</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MatplotlibWidget</class>
+   <extends>QWidget</extends>
+   <header>matplotlibwidget</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="../../PiFiles/Code for UI/Main Window Resource.qrc"/>
+ </resources>
+ <connections/>
+</ui>

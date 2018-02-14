@@ -66,10 +66,12 @@ void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
   newMessage.enable.rotate = rotate_enable;
   newMessage.enable.lower = lower_enable;
   newMessage.enable.upper = upper_enable;
+  newMessage.enable.speed = speed_lock;
   newMessage.joint.rotate = joy->axes[clockwise_counterclockwise]*speed;
   newMessage.joint.lower = joy->axes[forward_back]*speed;
   newMessage.joint.upper = joy->axes[ud_hat]*speed;
   newMessage.joint.gripper = -1*joy->buttons[trigger]+joy->buttons[thumb_rest];
+  newMessage.joint.speed = speed;
   anglePub.publish(newMessage);
 }
 
