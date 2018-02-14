@@ -24,6 +24,10 @@ class MainScreen(QtGui.QMainWindow):
         '''
         super(self.__class__, self).__init__()
         uic.loadUi('Main Window.ui', self)
+        rospy.init_node('gui_listener', anonymous=True)
+        rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
+        # spin() simply keeps python from exiting until this node is stopped
+        #rospy.spin()
 
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.updateFromGlobal)
@@ -49,14 +53,14 @@ class MainScreen(QtGui.QMainWindow):
 
         '''
         # global_msg is the place where all the data is stored
-        self.lower_axis.setValue(global_msg.joint.lower)
-        self.upper_axis.setValue(global_msg.joint.upper)
-        self.rotate_axis.setValue(global_msg.joint.rotate)
-        self.gripper_axis.setValue(global_msg.joint.gripper)
-        self.speed_axis.setValue(global_msg.joint.speed)
+        self.lower_axis.setValue(global_msg.joint.lower*50+50)
+        self.upper_axis.setValue(global_msg.joint.upper*50+50)
+        self.rotate_axis.setValue(global_msg.joint.rotate*50+50)
+        self.gripper_axis.setValue(global_msg.joint.gripper*50+50)
+        self.speed_axis.setValue(global_msg.joint.speed*50+50)
         self.lower_lock.setChecked(global_msg.enable.lower)
         self.upper_lock.setChecked(global_msg.enable.upper)
-        self.rotate_lock.setChecked(global_msg.enable.rotate)
+        self.rotation_lock.setChecked(global_msg.enable.rotate)
         self.speed_lock.setChecked(global_msg.enable.speed)
 
 
@@ -81,13 +85,10 @@ def callback(data):
     global_msg = data
 
 def StartROS():
-    rospy.init_node('gui_listener', anonymous=True)
-    rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+    print "nothing"
 
 
 if __name__ == '__main__':  # if we're running file directly and not importing it
-    t1 = threading.Thread(target=StartROS)
-    t1.start()
+    #t1 = threading.Thread(target=StartROS)
+    #t1.start()
     startGUI()
