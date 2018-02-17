@@ -13,6 +13,8 @@
     <node pkg="RoverArm" name="test_service" type="inverse_kinematics.py" />
     
     <node pkg="RoverArm" name="prog_to_arm" type="program_teleop" />
+    
+    <node pkg="RoverArm" name"gui" type="main_window_gui.py" />
 
 
   <group ns="testing">
