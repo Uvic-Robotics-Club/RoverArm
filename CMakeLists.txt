@@ -31,6 +31,9 @@ catkin_package()
 add_executable(joy_teleop src/joy_teleop.cpp)
 target_link_libraries(joy_teleop ${catkin_LIBRARIES})
 
+add_executable(point_list src/preprogrammed_points.cpp)
+target_link_libraries(point_list ${catkin_LIBRARIES})
+
 add_executable(program_teleop src/program_teleop.cpp)
 target_link_libraries(program_teleop ${catkin_LIBRARIES})
 
