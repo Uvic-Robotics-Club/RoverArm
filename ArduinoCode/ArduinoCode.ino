@@ -28,20 +28,17 @@ String inputString = "";
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
 #define stepsPerRevolution 800
-int rotateCurrentSteps {
-  0};
-bool rotateZeroSet {
-  0};
-int rotateLimitState {
-  0};
+int rotateCurrentSteps {0};
+bool rotateZeroSet {0};
+int rotateLimitState {0};
 int stepsToRotate;
 // pins 4, 7, 8, 9 for uno and nano
-Stepper rotateStepper(stepsPerRevolution, 4, 7, 8, 9);
+Stepper rotateStepper(stepsPerRevolution, 8, 9);
 
 //Lower Joint linear actuator Settings
 // pins 10 and 11 for uno and nano
-#define LOWER_PWM 11
-#define LOWER_DIR 3
+#define LOWER_PWM 10
+#define LOWER_DIR 11
 
 //Upper Joint linear actuator Settings
 // pins 5 and 6 for uno and nano
@@ -58,10 +55,10 @@ int RotateMode = VELOCITY;
 PID rotate(&RotateInput, &RotateOutput, &RotateSetpoint, RotateKp, RotateKi, RotateKd, P_ON_E, DIRECT); //P_ON_E (Proportional on Error) is the default behavior
 
 #define LOWERFEEDBACKPIN A0
-LinearActuator lower(LOWER_PWM,LOWER_DIR,LOWERFEEDBACKPIN);
+LinearActuator lower(LOWER_PWM,LOWER_DIR,LOWERFEEDBACKPIN,LOWER);
 
 #define UPPERFEEDBACKPIN A1
-LinearActuator upper(UPPER_PWM,UPPER_DIR,UPPERFEEDBACKPIN);
+LinearActuator upper(UPPER_PWM,UPPER_DIR,UPPERFEEDBACKPIN,UPPER);
 
 double GripperSetpoint, GripperInput, GripperOutput;
 double GripperKp = 0.1, GripperKi = 1, GripperKd = 0;
@@ -82,7 +79,7 @@ void setup() {
 
   //Rotate Stepper Setup
   pinMode(rotateLimitPin, INPUT);
-  rotateStepper.setSpeed(60);
+  rotateStepper.setSpeed(500);
 
   //Lower Linear Actuator Setup
   // pins setup inside the class
@@ -99,8 +96,27 @@ void loop() {
   //UpdateLower();
   //UpdateUpper();
   //UpdateGripper();
-  //lower.Update(); // this is empty right now
-  //upper.Update(); // this is empty right now
+  lower.Feedback(); // this is empty right now
+  upper.Feedback(); // this is empty right now
+  
+  if (GripperSetpoint > 0) {
+    // step 1/800 of a revolution:
+    rotateStepper.step(200);
+    GripperSetpoint--;
+  }
+  else   if (GripperSetpoint < 0) {
+    // step 1/800 of a revolution:
+    rotateStepper.step(-200);
+    GripperSetpoint++;
+  }
+  
+  Serial.print(lower._input);
+  Serial.print(",");
+  Serial.print(upper._input);
+  Serial.print(",");
+  Serial.print(lower._raw_input);
+  Serial.print(",");
+  Serial.println(GripperSetpoint);
   delay(50);
 }
 
@@ -120,22 +136,7 @@ void serialEvent() {
   }else{return;}
 
   if(true or Serial.read() == '\n'){
-
-
     LastMessageReceived = millis();
-
-    char buffer[30];
-    sprintf(buffer, "M:%i | V: %i ", mode ,value);
-    /*
-     Serial.print("M: ");
-     Serial.print(mode_string);
-     Serial.print(" V: ");
-     Serial.print(value_string);
-     */
-    Serial.println(buffer);
-    Serial.flush();
-
-
     switch (mode) {
     case 0:
       RotateMode = VELOCITY;
@@ -147,13 +148,11 @@ void serialEvent() {
       lower.manual(value);
       break;
     case 2:
-      //Serial.print("In case 2, and value 2 is ");
-      //Serial.println(value);
       upper.manual(value);
       break;
     case 3:
       GripperMode = VELOCITY;
-      GripperSetpoint = inputString.toInt(); //[gripper-,gripper+]
+      GripperSetpoint = value;
       GripperOutput = GripperSetpoint;
       gripper.SetMode(MANUAL);
       break;

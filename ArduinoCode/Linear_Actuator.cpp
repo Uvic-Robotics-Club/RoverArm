@@ -3,12 +3,17 @@
 #include "Arduino.h"
 
 
-LinearActuator::LinearActuator(int pwm_pin, int dir_pin) :
+LinearActuator::LinearActuator(int pwm_pin, int dir_pin, int lin_number) :
 _pid(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, DIRECT)
 {
     _pwm_pin = pwm_pin;
     _dir_pin = dir_pin;
     _feed_pin = -1;
+    if(lin_number==0){
+      _actuator=UPPER;
+    }else{
+      _actuator=LOWER;
+    }
     pinMode(_pwm_pin, OUTPUT);
     pinMode(_dir_pin, OUTPUT);
     _kp = 0.1;
@@ -18,12 +23,17 @@ _pid(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, DIRECT)
      //P_ON_E (Proportional on Error) is the default behavior
 }
 
-LinearActuator::LinearActuator(int pwm_pin, int dir_pin, int feedback_pin) :
+LinearActuator::LinearActuator(int pwm_pin, int dir_pin, int feedback_pin, int lin_number) :
 _pid(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, DIRECT)
 {
     _pwm_pin = pwm_pin;
     _dir_pin = dir_pin;
     _feed_pin = feedback_pin;
+    if(lin_number==0){
+      _actuator=UPPER;
+    }else{
+      _actuator=LOWER;
+    }
     pinMode(_pwm_pin, OUTPUT);
     pinMode(_dir_pin, OUTPUT);
     pinMode(_feed_pin, INPUT);
@@ -73,7 +83,13 @@ void LinearActuator::SetOutputLimits(int lower_bound, int upper_bound){
 
 void LinearActuator::Feedback(){
     if (_feed_pin != -1 ) {
-        _input = map(analogRead(_feed_pin), 0, 1024, 15, 50);
+      _raw_input = analogRead(_feed_pin);
+      if( _actuator == LOWER){
+        _input = map(_raw_input, 86, 300, 93, 40);
+      }
+      else{
+       _input = map(_raw_input, 473, 892, 162, 52.5); 
+      }
     }
 }
 

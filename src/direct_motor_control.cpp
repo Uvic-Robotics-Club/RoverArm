@@ -4,6 +4,10 @@
 #include <RoverArm/arm_velocity.h>
 #include <RoverArm/joint_angles.h>
 #include <serial/serial.h>
+#include <string>
+#include <iostream>
+
+#include <time.h>
 
 #define BASE 0
 #define LOWER_ELBOW 1
@@ -15,33 +19,64 @@
 std::string usbPort;
 serial::Serial ser;
 ros::Publisher armPub;
+
+ros::Publisher arm_feedback_Pub;
 bool output_to_serial = true;
 
 int data_to_send[] = {0,0,0,0};
 int rotate = 0;
 int lower = 0;
 int upper = 0;
+int gripper = 0;
 
+clock_t t;
 double mapValue(double x, double in_min, double in_max, double out_min, double out_max)
 {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+void feedbackParser(){
+	static std::string data_returned = "";
+	data_returned = "";
+	ser.readline(data_returned);
+	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
+	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
+	std::vector<double> vect;
+	std::stringstream ss(data_returned);
+	double i;
+	while (ss >> i){
+		vect.push_back(i);
+		if (ss.peek() == ',' or ss.peek()=='\n')
+			ss.ignore();
+	}
+	
+	std::string maybe_data = "";
+	char buffer [50];
+	for(int i=0; i < vect.size(); i++){
+		sprintf(buffer,"%f",vect[i]);
+		maybe_data = maybe_data + buffer + " | ";
+	}
+	//ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
+	RoverArm::joint_angles feedbackMessage;
+	feedbackMessage.base_angle = vect[2];
+	feedbackMessage.lower_angle = vect[0];
+	feedbackMessage.upper_angle = vect[1];
+	arm_feedback_Pub.publish(feedbackMessage);
+}
 
 void sendToArm(){
-	static std::string data_returned = "";
+	
     geometry_msgs::QuaternionStamped diagnostics_msg;
     
     while(ser.available()>=1){
-		data_returned = "";
-		ser.readline(data_returned);
-		ROS_ERROR_STREAM("Arduino->" << data_returned);
+		feedbackParser();
+		
 	}
 
     if(output_to_serial){
         ser.flush();
         char buffer[30];
-        sprintf(buffer, "M:%i V:%i\n", 0, data_to_send[1]);
+        sprintf(buffer, "M:%i V:%i\n", 3, data_to_send[1]);
         ser.write(buffer);
         ser.flush();
         sprintf(buffer, "M:%i V:%i\n", 1, data_to_send[2]);
@@ -98,6 +133,7 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   rotate = (int)round(newdata_to_send->joint.rotate*255.0*newdata_to_send->enable.rotate);
   lower =  (int)round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
+  gripper =  (int)round(newdata_to_send->joint.gripper*255.0);
  
   
   char buffer [50];
@@ -145,7 +181,7 @@ void setPosition(const RoverArm::joint_angles::ConstPtr& newdata_to_send){
 
 
 int main(int argc, char **argv){
-  
+  t = clock();
   //Initialize ROS node
   ros::init(argc,argv,"DirectMotorControl");
   ros::NodeHandle nh;
@@ -153,6 +189,7 @@ int main(int argc, char **argv){
   ros::Subscriber joySub = nh.subscribe("Arm/AngleVelocities",1,setVelocity);
   ros::Subscriber progSub = nh.subscribe("Arm/Position",1,setPosition);
   armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",1);
+  arm_feedback_Pub = nh.advertise<RoverArm::joint_angles>("Arm/Feedback",1);
   ROS_INFO("STARTING UP THE DMC");
   //nh.param<std::string>("USBPORT", usbPort, "/dev/ttyACM0");
 
@@ -184,16 +221,21 @@ int main(int argc, char **argv){
   }
 
   ROS_INFO("CONNECTED TO THE ARDUINO");
+  double frequency = 5;
+  double sleep_duration = 1.0/frequency;
   ros::Rate loop_rate(5);
   while(ros::ok()){
 	ros::spinOnce();
-	// [mode, mag, dir, nothing]
-	data_to_send[0] = 0;
-	data_to_send[1] = rotate;
-	data_to_send[2] = lower;
-	data_to_send[3] = upper;
-	sendToArm();
+	
+	if(((float)(clock()-t))/CLOCKS_PER_SEC > sleep_duration){
+		data_to_send[0] = 0;
+		data_to_send[1] = gripper;
+		data_to_send[2] = lower;
+		data_to_send[3] = upper;
+		sendToArm();
+		t = clock();
+	}
   
-    loop_rate.sleep();
+    //loop_rate.sleep();
   }
 }

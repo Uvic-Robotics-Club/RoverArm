@@ -23,7 +23,7 @@ class MainScreen(QtGui.QMainWindow):
 
         '''
         super(self.__class__, self).__init__()
-        uic.loadUi('Main Window.ui', self)
+        uic.loadUi('/home/student/catkin_ws/src/RoverArm/src/Main Window.ui', self)
         rospy.init_node('gui_listener', anonymous=True)
         rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
         # spin() simply keeps python from exiting until this node is stopped
@@ -34,7 +34,7 @@ class MainScreen(QtGui.QMainWindow):
         timer.start(100)
 
 
-    def __internalClose__(self,button,value):
+    def __internalClose__(self):
         '''
         this is an internal only method that closes the main window
         '''
@@ -58,11 +58,12 @@ class MainScreen(QtGui.QMainWindow):
         self.rotate_axis.setValue(global_msg.joint.rotate*50+50)
         self.gripper_axis.setValue(global_msg.joint.gripper*50+50)
         self.speed_axis.setValue(global_msg.joint.speed*50+50)
-        self.lower_lock.setChecked(global_msg.enable.lower)
-        self.upper_lock.setChecked(global_msg.enable.upper)
-        self.rotation_lock.setChecked(global_msg.enable.rotate)
+        self.lower_lock.setChecked(not global_msg.enable.lower)
+        self.upper_lock.setChecked(not global_msg.enable.upper)
+        self.rotation_lock.setChecked(not global_msg.enable.rotate)
         self.speed_lock.setChecked(global_msg.enable.speed)
-
+        if(rospy.is_shutdown()):
+			self.__internalClose__()
 
 
 

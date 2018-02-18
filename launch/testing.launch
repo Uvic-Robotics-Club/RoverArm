@@ -1,22 +1,13 @@
 <launch>
-
     <node pkg="RoverArm" name="joy2dmc" type="joy_teleop" respawn="true" />
-    
     <node pkg="joy" name="Joystick" type="joy_node" respawn="true" >
       <remap from="joy" to="arm_joy" />
     </node>
-    
     <node pkg="RoverArm" name="dmc" type="direct_motor_control" respawn="true" >
-     
     </node>
-    
     <node pkg="RoverArm" name="test_service" type="inverse_kinematics.py" />
-    
     <node pkg="RoverArm" name="prog_to_arm" type="program_teleop" />
-    
-    <node pkg="RoverArm" name"gui" type="main_window_gui.py" />
-
-
+    <node pkg="RoverArm" name="gui" type="main_window_gui.py" />
   <group ns="testing">
     <!--node pkg="RoverArm" name="ArduinoSimulator" type="arduino_sim" /-->
     <!-- node pkg="RoverArm" name="JoystickSimulator" type="joystick_sim" /-->
