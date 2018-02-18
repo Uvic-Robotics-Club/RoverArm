@@ -1,5 +1,6 @@
 #include "ros/ros.h" // needed for everything
 #include <geometry_msgs/Point.h>
+#include <sensor_msgs/Joy.h>
 
 int button_3  = 2;
 int button_4 = 3;
@@ -7,26 +8,26 @@ int button_5 = 4;
 int button_6 = 5;
 
 ros::Publisher pointPub;
-int index = 0;
+int in = 0;
 int n = 3;
-double points [n][3]; // n points, [x,y,z]
+double points[3][3]; // n points, [x,y,z]
 
 void joy_to_point(const sensor_msgs::Joy::ConstPtr& joy){
     geometry_msgs::Point newPoint;
     if(joy->buttons[button_3]==1){
-        index = (index + 1);
-        index = index>n ? index-n : index;
-        index = index%n;
+        in = (in + 1);
+        in = in>n ? in-n : in;
+        in = in % n;
     }
     if(joy->buttons[button_4]==1){
-        index = (index -1);
-        index = index<0 ? index + n : index;
-        index = index % n;
+        in = (in -1);
+        in = in<0 ? in + n : in;
+        in = in % n;
     }
     if(joy->buttons[button_3]==1 or joy->buttons[button_4]==1){
-        newPoint.x = points[index][0];
-        newPoint.y = points[index][1];
-        newPoint.z = points[index][2];
+        newPoint.x = points[in][0];
+        newPoint.y = points[in][1];
+        newPoint.z = points[in][2];
         pointPub.publish(newPoint);
     }
 }
