@@ -40,7 +40,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
+	ROS_INFO_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;
@@ -92,7 +92,7 @@ void sendToArm(){
 			
     }
     else{
-		ROS_ERROR_STREAM("Did not try and output the data when OUTPUT TO SERIAL IS " << output_to_serial);
+		ROS_INFO_STREAM("Did not try and output the data when OUTPUT TO SERIAL IS " << output_to_serial);
 	}
    
 
