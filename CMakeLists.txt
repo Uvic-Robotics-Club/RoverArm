@@ -19,6 +19,7 @@ add_message_files(FILES
 
 add_service_files(FILES
   point_to_angle.srv
+  angles_to_points.srv
 )
 
 include_directories(${catkin_INCLUDE_DIRS})

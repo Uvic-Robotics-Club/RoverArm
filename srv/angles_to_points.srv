@@ -1,0 +1,6 @@
+RoverArm/joint_angles angles
+---
+geometry_msgs/Point origin
+geometry_msgs/Point end_of_link_one
+geometry_msgs/Point end_of_link_two
+geometry_msgs/Point end_of_link_three

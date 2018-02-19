@@ -4,24 +4,50 @@ Created on Wed Feb 14 12:01:38 2018
 
 @author: joell
 """
-
+from __future__ import unicode_literals
 from PyQt4 import QtCore, QtGui, uic  # Import the PyQt4 module we'll need
 import sys  # We need sys so that we can pass argv to QApplication
 import rospy
 import threading
 
 from RoverArm.msg import arm_velocity
+from RoverArm.srv import angles_to_points,point_to_angle
+
+
+import sys
+import os
+import random
+from matplotlib.backends import qt_compat
+use_pyside = qt_compat.QT_API == qt_compat.QT_API_PYSIDE
+if use_pyside:
+    from PySide import QtGui, QtCore
+else:
+    from PyQt4 import QtGui, QtCore
+
+from numpy import arange, sin, pi
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d import axes3d
+import matplotlib.pyplot as plt
+
 
 
 # Gloabl Ros message
 global_msg = arm_velocity()
+
+arm_fk = rospy.ServiceProxy('arm_fk',angles_to_points)
+arm_ik = rospy.ServiceProxy('arm_ik',point_to_angle)
 
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        self.axes = fig.add_subplot(111, projection='3d')
+        self.axes.set_xlabel('x')
+        self.axes.set_ylabel('y')
+        self.axes.set_zlabel('z')
+        
 
         self.compute_initial_figure()
 
@@ -32,6 +58,9 @@ class MyMplCanvas(FigureCanvas):
                                    QtGui.QSizePolicy.Expanding,
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
+        plt.ion()
+        axes3d.Axes3D.mouse_init(self.axes)
+        
 
     def compute_initial_figure(self):
         pass
@@ -47,13 +76,24 @@ class MyDynamicMplCanvas(MyMplCanvas):
 
     def compute_initial_figure(self):
         self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'r')
+        axes3d.Axes3D.mouse_init(self.axes)
+        
 
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         l = [random.randint(0, 10) for i in range(4)]
         self.axes.cla()
         self.axes.plot([0, 1, 2, 3], l, 'r')
+        #arm_fk
+        #self.axes.scatter3D(x_joints[0], y_joints[0], z_joints[0], color='g', label='p1')
+        #self.axes.scatter3D(x_joints[1], y_joints[1], z_joints[1], color='r', label='p2')
+        #self.axes.scatter3D(x_joints[2], y_joints[2], z_joints[2], color='m', label='p3')
+        #self.axes.scatter3D(x_joints[3], y_joints[3], z_joints[3], color='k', label='p4')
+        self.axes.set_xlabel('x')
+        self.axes.set_ylabel('y')
+        self.axes.set_zlabel('z')
         self.draw()
+       
 
 class MainScreen(QtGui.QMainWindow):
     def __init__(self):
@@ -63,7 +103,7 @@ class MainScreen(QtGui.QMainWindow):
         '''
         super(self.__class__, self).__init__()
         uic.loadUi('/home/student/catkin_ws/src/RoverArm/src/Main Window.ui', self)
-        l = self.groupBox_2
+        l = self.verticalLayout
         dc = MyDynamicMplCanvas(self, width=5, height=4, dpi=100)
         l.addWidget(dc)
 
