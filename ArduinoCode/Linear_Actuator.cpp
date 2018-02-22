@@ -48,6 +48,16 @@ void LinearActuator::manual(int speed){
     _pid.SetMode(MANUAL);
     _output = speed;
     //Output(); // once this is tested, try uncommenting this
+    if (_input <= _lower_limit && speed > 0){
+      analogWrite(_pwm_pin,0);
+      return;
+    }
+    
+    if (_input >= _upper_limit && speed < 0){
+      analogWrite(_pwm_pin,0);
+      return;
+    }
+      
     analogWrite(_pwm_pin,abs(speed));
     if (speed>0) {
         digitalWrite(_dir_pin,1);

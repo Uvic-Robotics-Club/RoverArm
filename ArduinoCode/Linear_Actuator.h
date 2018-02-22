@@ -29,6 +29,7 @@ public:
   double _setpoint, _input, _output;
   double _raw_input;
   double _kp, _ki, _kd;
+  double _lower_limit, _upper_limit;
 private:
   PID _pid;
 };

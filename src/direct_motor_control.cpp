@@ -23,7 +23,7 @@ ros::Publisher armPub;
 ros::Publisher arm_feedback_Pub;
 bool output_to_serial = true;
 
-int data_to_send[] = {0,0,0,0};
+int data_to_send[] = {0,0,0,0,0};
 int rotate = 0;
 int lower = 0;
 int upper = 0;
@@ -40,7 +40,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	ROS_INFO_STREAM("Arduino->" << data_returned << "|");
+	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;
@@ -76,13 +76,16 @@ void sendToArm(){
     if(output_to_serial){
         ser.flush();
         char buffer[30];
-        sprintf(buffer, "M:%i V:%i\n", 3, data_to_send[1]);
+        sprintf(buffer, "M:%i V:%i\n", 0, data_to_send[1]);
         ser.write(buffer);
         ser.flush();
         sprintf(buffer, "M:%i V:%i\n", 1, data_to_send[2]);
         ser.write(buffer);
         ser.flush();
         sprintf(buffer, "M:%i V:%i\n", 2, data_to_send[3]);
+        ser.write(buffer);
+        ser.flush();
+        sprintf(buffer, "M:%i V:%i\n", 3, data_to_send[4]);
         ser.write(buffer);
         ser.flush();
         //ser.flush();
@@ -229,9 +232,10 @@ int main(int argc, char **argv){
 	
 	if(((float)(clock()-t))/CLOCKS_PER_SEC > sleep_duration){
 		data_to_send[0] = 0;
-		data_to_send[1] = gripper;
+		data_to_send[1] = rotate;
 		data_to_send[2] = lower;
 		data_to_send[3] = upper;
+		data_to_send[4] = gripper;
 		sendToArm();
 		t = clock();
 	}

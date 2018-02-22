@@ -1,6 +1,7 @@
 #include <Stepper.h>
 #include "PID_v1.h"
 #include "Linear_Actuator.h"
+//#include <Servo.h>    
 
 /*
    This will control 4 joints
@@ -28,12 +29,16 @@ String inputString = "";
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
 #define stepsPerRevolution 800
-int rotateCurrentSteps {0};
-bool rotateZeroSet {0};
-int rotateLimitState {0};
+int rotateCurrentSteps {
+  0};
+bool rotateZeroSet {
+  0};
+int rotateLimitState {
+  0};
 int stepsToRotate;
 // pins 4, 7, 8, 9 for uno and nano
-Stepper rotateStepper(stepsPerRevolution, 8, 9);
+Stepper rotateStepper(stepsPerRevolution, 4, 7);
+//Servo myservo;
 
 //Lower Joint linear actuator Settings
 // pins 10 and 11 for uno and nano
@@ -79,14 +84,19 @@ void setup() {
 
   //Rotate Stepper Setup
   pinMode(rotateLimitPin, INPUT);
-  rotateStepper.setSpeed(500);
+  rotateStepper.setSpeed(50);
 
   //Lower Linear Actuator Setup
   // pins setup inside the class
   lower.SetOutputLimits(-255,255);
+  lower._upper_limit = 360;
+  lower._lower_limit = 45;
 
   //Upper Linear Actuator Setup
   upper.SetOutputLimits(-255,255);
+  upper._lower_limit = 0;
+  upper._upper_limit = 135;
+  //myservo.attach(9);
 
 
 }
@@ -98,18 +108,18 @@ void loop() {
   //UpdateGripper();
   lower.Feedback(); // this is empty right now
   upper.Feedback(); // this is empty right now
-  
-  if (GripperSetpoint > 0) {
+
+  if (RotateSetpoint > 0) {
     // step 1/800 of a revolution:
-    rotateStepper.step(200);
-    GripperSetpoint--;
+    rotateStepper.step(5);
+    RotateSetpoint --;
   }
-  else   if (GripperSetpoint < 0) {
+  else   if (RotateSetpoint < 0) {
     // step 1/800 of a revolution:
-    rotateStepper.step(-200);
-    GripperSetpoint++;
+    rotateStepper.step(-5);
+    RotateSetpoint++;
   }
-  
+
   Serial.print(lower._input);
   Serial.print(",");
   Serial.print(upper._input);
@@ -132,15 +142,20 @@ void serialEvent() {
     if(Serial.find("V:")){
       value = Serial.parseInt();
     }
-    else{return;}
-  }else{return;}
+    else{
+      return;
+    }
+  }
+  else{
+    return;
+  }
 
   if(true or Serial.read() == '\n'){
     LastMessageReceived = millis();
     switch (mode) {
     case 0:
       RotateMode = VELOCITY;
-      RotateSetpoint = inputString.toInt();
+      RotateSetpoint = abs(value)>150 ? value: 0;
       RotateOutput = RotateSetpoint;
       rotate.SetMode(MANUAL);
       break;
@@ -155,6 +170,10 @@ void serialEvent() {
       GripperSetpoint = value;
       GripperOutput = GripperSetpoint;
       gripper.SetMode(MANUAL);
+
+      
+      //myservo.write(map(value, -255, 255, 0, 179));                  // sets the servo position according to the scaled value 
+
       break;
     case 4:
       // this might cause an issue trying to left shift a char
@@ -260,6 +279,7 @@ void wholeThing() {
     inputString += inChar;
   }
 }
+
 
 
 

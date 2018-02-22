@@ -103,9 +103,9 @@ class MainScreen(QtGui.QMainWindow):
         '''
         super(self.__class__, self).__init__()
         uic.loadUi('/home/student/catkin_ws/src/RoverArm/src/Main Window.ui', self)
-        l = self.verticalLayout
-        dc = MyDynamicMplCanvas(self, width=5, height=4, dpi=100)
-        l.addWidget(dc)
+        #l = self.verticalLayout
+        #dc = MyDynamicMplCanvas(self, width=5, height=4, dpi=100)
+        #l.addWidget(dc)
 
 
 
