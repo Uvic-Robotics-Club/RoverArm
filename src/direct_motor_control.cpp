@@ -22,8 +22,9 @@ ros::Publisher armPub;
 
 ros::Publisher arm_feedback_Pub;
 bool output_to_serial = true;
-
-int data_to_send[] = {0,0,0,0,0};
+// data to send
+// mode 0, value 0, mode 1, value 1, mode 2, value 2, mode 3, value 3
+int data_to_send[] = {0,0,0,0,0,0,0,0};
 int rotate = 0;
 int lower = 0;
 int upper = 0;
@@ -40,7 +41,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
+	ROS_INFO_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;
@@ -56,11 +57,11 @@ void feedbackParser(){
 		sprintf(buffer,"%f",vect[i]);
 		maybe_data = maybe_data + buffer + " | ";
 	}
-	//ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
+	ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
 	RoverArm::joint_angles feedbackMessage;
-	feedbackMessage.base_angle = vect[2];
 	feedbackMessage.lower_angle = vect[0];
 	feedbackMessage.upper_angle = vect[1];
+	feedbackMessage.base_angle = vect[2];
 	arm_feedback_Pub.publish(feedbackMessage);
 }
 
@@ -75,24 +76,10 @@ void sendToArm(){
 
     if(output_to_serial){
         ser.flush();
-        char buffer[30];
-        sprintf(buffer, "M:%i V:%i\n", 0, data_to_send[1]);
+        char buffer[60];
+        sprintf(buffer, "M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i", data_to_send[0], data_to_send[1], data_to_send[2], data_to_send[3], data_to_send[4], data_to_send[5]);
         ser.write(buffer);
         ser.flush();
-        sprintf(buffer, "M:%i V:%i\n", 1, data_to_send[2]);
-        ser.write(buffer);
-        ser.flush();
-        sprintf(buffer, "M:%i V:%i\n", 2, data_to_send[3]);
-        ser.write(buffer);
-        ser.flush();
-        sprintf(buffer, "M:%i V:%i\n", 3, data_to_send[4]);
-        ser.write(buffer);
-        ser.flush();
-        //ser.flush();
-        //ROS_ERROR_STREAM("Program -> "<<buffer);
-        //data_to_send[0]=0;
-        //data_to_send[1]=0;
-			
     }
     else{
 		ROS_INFO_STREAM("Did not try and output the data when OUTPUT TO SERIAL IS " << output_to_serial);
@@ -137,48 +124,23 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   lower =  (int)round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
   gripper =  (int)round(newdata_to_send->joint.gripper*255.0);
- 
-  
-  char buffer [50];
-  sprintf(buffer,"R: %i | LOWER: %i | UPPER: %i", rotate, lower, upper);
-  ROS_ERROR_STREAM(buffer);
+  data_to_send[2] = 1;
+  data_to_send[4] = 2;
+  data_to_send[0] = 0;
+
 }
 
 void setPosition(const RoverArm::joint_angles::ConstPtr& newdata_to_send){
-  static int rotate = 0;
-  static int lower = 0;
-  static int upper = 0;
   // maping the -2pi -> 2pi that the angle is in to the max and min of a uint16
-  rotate = round(mapValue(newdata_to_send->base_angle,-6.28318,6.28318,0,65536));
-  lower = round(mapValue(newdata_to_send->lower_angle,-6.28318,6.28318,0,65536));
-  upper = round(mapValue(newdata_to_send->upper_angle,-6.28318,6.28318,0,65536));
-
-  //converting to 8 bit; had problems getting proper behavior when just using a cast.
-  uint8_t rotateH = rotate>>8;
-  uint8_t rotateL = rotate;
-
-  uint8_t lowerH = lower>>8;
-  uint8_t lowerL = lower;
-
-  uint8_t upperH = upper>>8;
-  uint8_t upperL = upper;
-
-
-  // [mode, H, L, nothing]
-  data_to_send[0] = 4;
-  data_to_send[1] = rotateH;
-  data_to_send[2] = rotateL;
-  sendToArm();
-
-  data_to_send[0] = 5;
-  data_to_send[1] = lowerH;
-  data_to_send[2] = lowerL;
-  sendToArm();
-
-  data_to_send[0] = 6;
-  data_to_send[1] = upperH;
-  data_to_send[2] = upperL;
-  sendToArm();
+  rotate = (int)round(newdata_to_send->base_angle);
+  lower = (int)round(newdata_to_send->lower_angle);
+  upper = (int)round(newdata_to_send->upper_angle);
+  data_to_send[2] = 5;
+  data_to_send[4] = 6;
+  data_to_send[0] = 0;
+  data_to_send[1] = 0;
+  data_to_send[3] = lower;
+  data_to_send[5] = upper;
 
 }
 
@@ -224,18 +186,14 @@ int main(int argc, char **argv){
   }
 
   ROS_INFO("CONNECTED TO THE ARDUINO");
-  double frequency = 5;
+  double frequency = 15;
   double sleep_duration = 1.0/frequency;
   ros::Rate loop_rate(5);
   while(ros::ok()){
 	ros::spinOnce();
 	
 	if(((float)(clock()-t))/CLOCKS_PER_SEC > sleep_duration){
-		data_to_send[0] = 0;
-		data_to_send[1] = rotate;
-		data_to_send[2] = lower;
-		data_to_send[3] = upper;
-		data_to_send[4] = gripper;
+		
 		sendToArm();
 		t = clock();
 	}

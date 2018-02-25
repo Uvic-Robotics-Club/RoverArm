@@ -29,15 +29,12 @@ String inputString = "";
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2
 #define stepsPerRevolution 800
-int rotateCurrentSteps {
-  0};
-bool rotateZeroSet {
-  0};
-int rotateLimitState {
-  0};
+int rotateCurrentSteps {0};
+bool rotateZeroSet {0};
+int rotateLimitState {0};
 int stepsToRotate;
 // pins 4, 7, 8, 9 for uno and nano
-Stepper rotateStepper(stepsPerRevolution, 4, 7);
+//Stepper rotateStepper(stepsPerRevolution, 4, 7);
 //Servo myservo;
 
 //Lower Joint linear actuator Settings
@@ -61,9 +58,13 @@ PID rotate(&RotateInput, &RotateOutput, &RotateSetpoint, RotateKp, RotateKi, Rot
 
 #define LOWERFEEDBACKPIN A0
 LinearActuator lower(LOWER_PWM,LOWER_DIR,LOWERFEEDBACKPIN,LOWER);
+double lowerInput, lowerOutput, lowerSetpoint;
+PID lowerPID(&lowerInput, &lowerOutput, &lowerSetpoint, lower._kp, lower._ki, lower._kd, P_ON_E, REVERSE);
 
 #define UPPERFEEDBACKPIN A1
 LinearActuator upper(UPPER_PWM,UPPER_DIR,UPPERFEEDBACKPIN,UPPER);
+double upperInput, upperOutput, upperSetpoint;
+PID upperPID(&upperInput, &upperOutput, &upperSetpoint, upper._kp, upper._ki, upper._kd, P_ON_E,REVERSE);
 
 double GripperSetpoint, GripperInput, GripperOutput;
 double GripperKp = 0.1, GripperKi = 1, GripperKd = 0;
@@ -77,6 +78,10 @@ double GripperFeedback();
 void OutputRotate();
 void OutputGripper();
 
+double my2_map(double x, double in_min, double in_max, double out_min, double out_max)
+{
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 void setup() {
   // Serial Setup
@@ -84,49 +89,72 @@ void setup() {
 
   //Rotate Stepper Setup
   pinMode(rotateLimitPin, INPUT);
-  rotateStepper.setSpeed(50);
+  //rotateStepper.setSpeed(50);
+  pinMode(7, OUTPUT);
+  pinMode(4, OUTPUT);
 
   //Lower Linear Actuator Setup
   // pins setup inside the class
   lower.SetOutputLimits(-255,255);
   lower._upper_limit = 360;
   lower._lower_limit = 45;
+  lowerPID.SetOutputLimits(-255,255);
+  lowerPID.SetMode(1);
 
   //Upper Linear Actuator Setup
   upper.SetOutputLimits(-255,255);
   upper._lower_limit = 0;
   upper._upper_limit = 135;
+  upperPID.SetOutputLimits(-255,255);
+  upperPID.SetMode(1);
   //myservo.attach(9);
 
 
 }
 
 void loop() {
-  //UpdateRotate();
-  //UpdateLower();
-  //UpdateUpper();
-  //UpdateGripper();
-  lower.Feedback(); // this is empty right now
-  upper.Feedback(); // this is empty right now
+  lower.Update();
+  upper.Update();
 
   if (RotateSetpoint > 0) {
     // step 1/800 of a revolution:
-    rotateStepper.step(5);
-    RotateSetpoint --;
+    //rotateStepper.step(5);
+    //RotateSetpoint=-1;
+    digitalWrite(7, LOW);
+    digitalWrite(4, LOW);
+    delay(10);
+    digitalWrite(7, HIGH);
+    
   }
   else   if (RotateSetpoint < 0) {
     // step 1/800 of a revolution:
-    rotateStepper.step(-5);
-    RotateSetpoint++;
+    //rotateStepper.step(-5);
+    //RotateSetpoint=+1;
+    digitalWrite(7, LOW);
+    digitalWrite(4, HIGH);
+    delay(10);
+    digitalWrite(7, HIGH);
   }
+  upperInput = upper._input;
+  upperOutput = upper._output;
+  upperSetpoint = upper._setpoint;
+  //upperPID.Compute();
+  //upper.manual(upperOutput);
+  
+  lowerInput = lower._input;
+  lowerOutput = lower._output;
+  lowerSetpoint = lower._setpoint;
+  //lowerPID.Compute();
+  //lower.manual(lowerOutput);
 
-  Serial.print(lower._input);
-  Serial.print(",");
   Serial.print(upper._input);
   Serial.print(",");
-  Serial.print(lower._raw_input);
+  Serial.print(lower._input);
   Serial.print(",");
-  Serial.println(GripperSetpoint);
+  Serial.print(upper._output);
+  Serial.print(",");
+  Serial.println(lower._output);
+  
   delay(50);
 }
 
@@ -135,63 +163,59 @@ void serialEvent() {
 
   int mode, value;
   String mode_string, value_string;
-
-  if(Serial.find("M:")){
-
-    mode = Serial.parseInt();
-    if(Serial.find("V:")){
-      value = Serial.parseInt();
+  while(Serial.available()>4){
+    if(Serial.find("M:")){
+      mode = Serial.parseInt();
+      if(Serial.find("V:")){
+        value = Serial.parseInt();
+      }
+      else{
+        return;
+      }
     }
     else{
       return;
     }
-  }
-  else{
-    return;
-  }
 
-  if(true or Serial.read() == '\n'){
-    LastMessageReceived = millis();
-    switch (mode) {
-    case 0:
-      RotateMode = VELOCITY;
-      RotateSetpoint = abs(value)>150 ? value: 0;
-      RotateOutput = RotateSetpoint;
-      rotate.SetMode(MANUAL);
-      break;
-    case 1:
-      lower.manual(value);
-      break;
-    case 2:
-      upper.manual(value);
-      break;
-    case 3:
-      GripperMode = VELOCITY;
-      GripperSetpoint = value;
-      GripperOutput = GripperSetpoint;
-      gripper.SetMode(MANUAL);
-
-      
-      //myservo.write(map(value, -255, 255, 0, 179));                  // sets the servo position according to the scaled value 
-
-      break;
-    case 4:
-      // this might cause an issue trying to left shift a char
-      RotateMode = POSITION;
-      //temp = first<<8;
-      //temp = temp + second;
-      RotateSetpoint = map(inputString.toInt(), 0, 65536, -360, 360);
-      rotate.SetMode(AUTOMATIC);
-      break;
-    case 5:
-      lower.EnablePID();
-      lower.SetSetpoint(value);
-      break;
-    case 6:
-      upper.EnablePID();
-      upper.SetSetpoint(value);
-      break;
-    };
+    if(true or Serial.read() == '\n'){
+      LastMessageReceived = millis();
+      switch (mode) {
+      case 0:
+        RotateMode = VELOCITY;
+        RotateSetpoint = abs(value)>150 ? value: 0;
+        RotateOutput = RotateSetpoint;
+        rotate.SetMode(MANUAL);
+        break;
+      case 1:
+        lower.manual(value);
+        lowerPID.SetMode(0);
+        break;
+      case 2:
+        upper.manual(value);
+        upperPID.SetMode(0);
+        break;
+      case 3:
+        GripperMode = VELOCITY;
+        GripperSetpoint = value;
+        GripperOutput = GripperSetpoint;
+        gripper.SetMode(MANUAL);
+        break;
+      case 4:
+        // this might cause an issue trying to left shift a char
+        RotateMode = POSITION;
+        RotateSetpoint = map(value, -255, 255, -360, 360);
+        rotate.SetMode(AUTOMATIC);
+        break;
+      case 5:
+        lower.SetSetpoint(value);
+        lowerPID.SetMode(1);
+        break;
+      case 6:
+        upper.SetSetpoint(value);
+        upperPID.SetMode(1);
+        break;
+      };
+    }
   }
 }
 
@@ -203,7 +227,7 @@ void UpdateRotate() {
   }
   else if (RotateMode == POSITION) {
     RotateInput = LatestValue;
-    rotate.Compute();
+    //rotate.Compute();
   }
 
   OutputRotate();
@@ -230,11 +254,11 @@ double RotateFeedback() {
   //had some werid behaviour trying to set zero at -180.
   static double current;
   if (!rotateZeroSet) {
-    rotateStepper.step(-1);
+    //rotateStepper.step(-1);
     rotateLimitState = digitalRead(rotateLimitPin);
     if (rotateLimitState == LOW) {
       delay(100); //delay to reducce jerk of stepper. Smooth velocity curve would be better, or lost step detection.
-      rotateStepper.step(400);
+      //rotateStepper.step(400);
       rotateCurrentSteps = 0;
       rotateZeroSet = 1;
     }
@@ -258,7 +282,7 @@ double GripperFeedback() {
 }
 void OutputRotate() {
   //rotates stepper number of steps found in feedback
-  rotateStepper.step(stepsToRotate);
+  //rotateStepper.step(stepsToRotate);
 }
 
 
@@ -279,6 +303,7 @@ void wholeThing() {
     inputString += inChar;
   }
 }
+
 
 
 

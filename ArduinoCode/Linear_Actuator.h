@@ -13,14 +13,15 @@ public:
 
   LinearActuator(int pwm_pin, int dir_pin, int lin_number); // constructor for purely manual control
   LinearActuator(int pwm_pin, int dir_pin, int feedback_pin, int lin_number);
-  void manual(int speed);
+  void manual(double speed);
   void Update();
   void SetOutputLimits(int lower_bound, int upper_bound);
   void Feedback();
-  void Output();
+  int Output();
   void SetSetpoint(int new_setpoint);
   void EnablePID();
   void DisablePID();
+  bool pidEnabled();
 
 
 
@@ -31,7 +32,7 @@ public:
   double _kp, _ki, _kd;
   double _lower_limit, _upper_limit;
 private:
-  PID _pid;
+  PID* _pid;
 };
 
 

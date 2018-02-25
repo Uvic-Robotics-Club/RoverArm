@@ -2,6 +2,7 @@
 import rospy
 from RoverArm.srv import *
 import geometry_msgs.msg
+from RoverArm.msg import *
 import sys,os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Utilities/Robotic Arm Class'))
 from Arm import DisplayArm
@@ -20,7 +21,7 @@ def get_angle_from_point(req):
     return_msg = point_to_angleResponse()
     return_msg.angles.base_angle = rad_to_deg(results[0])
     return_msg.angles.lower_angle = rad_to_deg(results[1])
-    return_msg.angles.upper_angle = rad_to_deg(results[2])
+    return_msg.angles.upper_angle = rad_to_deg(results[2])+180
     return return_msg
     
 def rad_to_deg(angle):
@@ -51,12 +52,20 @@ def get_points_from_angles(req):
     
     return return_msg
     
+def set_actual_angles(data):
+    global arm
+    #arm.q2 = deg_to_rad(data.lower_angle)
+    #arm.q3 = deg_to_rad(data.upper_angle)
+    #arm.q1 = deg_to_rad(data.base_angle)
+
+    
 
 def test_service_server():
     global arm
     rospy.init_node('arm_inverse_kinematics_service')
     s = rospy.Service('arm_ik', point_to_angle, get_angle_from_point)
     ss = rospy.Service('arm_fk', angles_to_points, get_points_from_angles)
+    rospy.Subscriber("Arm/Feedback", joint_angles, set_actual_angles)
     rospy.spin()
 
 if __name__ == '__main__':

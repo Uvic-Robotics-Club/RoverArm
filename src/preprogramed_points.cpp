@@ -35,9 +35,9 @@ void joy_to_point(const sensor_msgs::Joy::ConstPtr& joy){
 int main(int argc, char **argv){
     // x y z, keeping y zero because I cant rotate the base maybe_data
     // All distances in meters
-    points[0][0] = 0.5;
+    points[0][0] = 10;
     points[0][1] = 0.0;
-    points[0][2] = 0.5;
+    points[0][2] = 10;
 
     points[1][0] = 1.0;
     points[1][1] = 0.0;
