@@ -3,33 +3,8 @@
 #include "Arduino.h"
 
 
-LinearActuator::LinearActuator(int pwm_pin, int dir_pin, int lin_number)
-//_pid(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, DIRECT)
-{
-  _pwm_pin = pwm_pin;
-  _dir_pin = dir_pin;
-  _feed_pin = -1;
-  if(lin_number==0){
-    _actuator=UPPER;
-  }
-  else{
-    _actuator=LOWER;
-  }
-  pinMode(_pwm_pin, OUTPUT);
-  pinMode(_dir_pin, OUTPUT);
-  _kp = 0.1;
-  _ki = 1;
-  _kd = 0;
-  _mode = VELOCITY;
-  _input = 0;
-  _output = 0;
-  _setpoint = 0;
-  //P_ON_E (Proportional on Error) is the default behavior
-  _pid = new PID(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, REVERSE);
-}
 
 LinearActuator::LinearActuator(int pwm_pin, int dir_pin, int feedback_pin, int lin_number)
-//_pid(&_input, &_output, &_setpoint, _kp, _ki, _kd, P_ON_E, DIRECT)
 {
   
   _pwm_pin = pwm_pin;

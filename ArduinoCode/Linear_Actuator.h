@@ -11,7 +11,6 @@ public:
 #define UPPER 0
 #define LOWER 1
 
-  LinearActuator(int pwm_pin, int dir_pin, int lin_number); // constructor for purely manual control
   LinearActuator(int pwm_pin, int dir_pin, int feedback_pin, int lin_number);
   void manual(double speed);
   void Update();
