@@ -41,7 +41,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	ROS_INFO_STREAM("Arduino->" << data_returned << "|");
+	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;
@@ -57,7 +57,7 @@ void feedbackParser(){
 		sprintf(buffer,"%f",vect[i]);
 		maybe_data = maybe_data + buffer + " | ";
 	}
-	ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
+	//ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
 	RoverArm::joint_angles feedbackMessage;
 	feedbackMessage.lower_angle = vect[0];
 	feedbackMessage.upper_angle = vect[1];
@@ -124,9 +124,12 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   lower =  (int)round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
   gripper =  (int)round(newdata_to_send->joint.gripper*255.0);
-  data_to_send[2] = 1;
-  data_to_send[4] = 2;
-  data_to_send[0] = 0;
+  data_to_send[2] = 1; // manual lower
+  data_to_send[4] = 2; // manual upper
+  data_to_send[0] = 0; // manual rotate
+  data_to_send[1] = rotate;
+  data_to_send[3] = lower;
+  data_to_send[5] = upper;
 
 }
 
@@ -166,7 +169,7 @@ int main(int argc, char **argv){
   else{
       try
     {
-        ser.setPort("/dev/ttyUSB0");
+        ser.setPort("/dev/ttyUSB1");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);

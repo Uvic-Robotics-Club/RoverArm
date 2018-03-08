@@ -1,5 +1,5 @@
 <launch>
-    <!-- node pkg="RoverArm" name="joy2dmc" type="joy_teleop" respawn="true" /-->
+    <node pkg="RoverArm" name="joy2dmc" type="joy_teleop" respawn="true"/>
     <node pkg="joy" name="Joystick" type="joy_node" respawn="true" >
       <remap from="joy" to="arm_joy" />
     </node>

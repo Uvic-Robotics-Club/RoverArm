@@ -1,26 +1,28 @@
 #include "Stepper_Motor.h"
 #include "PID_v1.h"
 #include "Linear_Actuator.h"
+//#include <Servo.h>
+//#include <AccelStepper.h>
 
 /*
   This will control 4 joints of the Rover Arm
-  
-  Joint 1: Rotate
-  this is the base rotation of the arm, using a stepper motor to adjust the angle
-  For how to use this class please look in Stepper_Motor.h. It should be self explanitory
-  
-  Joint 2: Lower
-  this is the lower elbow joint of the arm, using a linear actuator to adjust the angle
-  feedback = pot on linear actuator
-  
-  Joint 3: Upper
-  this is the upper elbow joint of the arm, using a linear actuator to adjust the angle
-  feedback = pot on linear actuator
-  
-  Joint 4: Gripper (NOT YET IMPLEMENTED)
-  this is the end effector, using a stepper motor to open and close
-  feedback = force sensor
-*/
+ 
+ Joint 1: Rotate
+ this is the base rotation of the arm, using a stepper motor to adjust the angle
+ For how to use this class please look in Stepper_Motor.h. It should be self explanitory
+ 
+ Joint 2: Lower
+ this is the lower elbow joint of the arm, using a linear actuator to adjust the angle
+ feedback = pot on linear actuator
+ 
+ Joint 3: Upper
+ this is the upper elbow joint of the arm, using a linear actuator to adjust the angle
+ feedback = pot on linear actuator
+ 
+ Joint 4: Gripper (NOT YET IMPLEMENTED)
+ this is the end effector, using a stepper motor to open and close
+ feedback = force sensor
+ */
 
 #define VELOCITY 1
 #define POSITION 0
@@ -50,7 +52,7 @@
 
 double LastMessageReceived = 0;
 
-StepperMotor rotate(ROTATE_DIR, ROTATE_STEP, STEPS_PER_ROTATION);
+StepperMotor rotate;
 
 
 LinearActuator lower(LOWER_PWM, LOWER_DIR, LOWER_FEEDBACK, LOWER);
@@ -83,8 +85,9 @@ void setup() {
   //Rotate Stepper Setup
   pinMode(rotateLimitPin, INPUT);
   //rotateStepper.setSpeed(50);
-  pinMode(7, OUTPUT);
-  pinMode(4, OUTPUT);
+  pinMode(ROTATE_DIR, OUTPUT);
+  pinMode(ROTATE_STEP, OUTPUT);
+  rotate.begin(ROTATE_DIR, ROTATE_STEP, STEPS_PER_ROTATION);
 
   //Lower Linear Actuator Setup
   // pins setup inside the class
@@ -112,12 +115,13 @@ void loop() {
     upper.manual(0);
     lowerPID.SetMode(0);
     rotate.Manual(0);
+    Serial.println("TIMEOUT");
   }
-  
+
   lower.Update();
   upper.Update();
   rotate.Update();
-
+  
   upperInput = upper._input;
   upperOutput = upper._output;
   upperSetpoint = upper._setpoint;
@@ -158,34 +162,34 @@ void serialEvent() {
     // the program has gotten here then the mode and value are valid.
     LastMessageReceived = millis();
     switch (mode) {
-      case 0:
-        rotate.Manual(value);
-        break;
-      case 1:
-        lower.manual(value);
-        lowerPID.SetMode(0);
-        break;
-      case 2:
-        upper.manual(value);
-        upperPID.SetMode(0);
-        break;
-      case 3:
-        GripperMode = VELOCITY;
-        GripperSetpoint = value;
-        GripperOutput = GripperSetpoint;
-        gripper.SetMode(MANUAL);
-        break;
-      case 4:
-        rotate.SetSetpoint(value);
-        break;
-      case 5:
-        lower.SetSetpoint(value);
-        lowerPID.SetMode(1);
-        break;
-      case 6:
-        upper.SetSetpoint(value);
-        upperPID.SetMode(1);
-        break;
+    case 0:
+      rotate.Manual(value);
+      break;
+    case 1:
+      lower.manual(value);
+      lowerPID.SetMode(0);
+      break;
+    case 2:
+      upper.manual(value);
+      upperPID.SetMode(0);
+      break;
+    case 3:
+      GripperMode = VELOCITY;
+      GripperSetpoint = value;
+      GripperOutput = GripperSetpoint;
+      gripper.SetMode(MANUAL);
+      break;
+    case 4:
+      rotate.SetSetpoint(value);
+      break;
+    case 5:
+      lower.SetSetpoint(value);
+      lowerPID.SetMode(1);
+      break;
+    case 6:
+      upper.SetSetpoint(value);
+      upperPID.SetMode(1);
+      break;
     };
 
   }
@@ -217,6 +221,7 @@ double GripperFeedback() {
 void OutputGripper() {
   // have specific output for the gripper joint here
 }
+
 
 
 
