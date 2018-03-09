@@ -1,10 +1,8 @@
 #include "End_Effector.h"
 
-Gripper::Gripper(int servo_pin) : 
-_servo_pin(servo_pin)
+Gripper::Gripper(int servo_pin)
 {
-  _servo = new Servo();
-  _servo->attach(_servo_pin);
+  begin(servo_pin);
 }
 Gripper::Gripper()
 {
@@ -14,29 +12,49 @@ Gripper::Gripper()
 
 void Gripper::begin(int servo_pin)
 {
+  // save the pin number
   _servo_pin = servo_pin;
+  // set to the maximum open and close
+  Mapping(0,180);
+  // create a new servo
   _servo = new Servo();
+  // attach our pin to the servo object
   _servo->attach(_servo_pin);
 }
 
-void Gripper::open_gripper()
+/*
+ * Open the gripper to the predefined min angle
+ * 
+ * NOTE: THIS MAY HAVE TO BE CHANGED TO MAX ANGLE DURING TESTING
+ */
+void Gripper::Open()
 {
   _servo->write(_min_angle);
 }
-void Gripper::close_gripper()
+/*
+ * Open the gripper to the predefined max angle
+ * 
+ * NOTE: THIS MAY HAVE TO BE CHANGED TO MIN ANGLE DURING TESTING
+ */
+void Gripper::Close()
 {
   _servo->write(_max_angle);
 }
 
-void Gripper::set_min_angle(int new_min_angle)
+/*
+ * Get the angle that the gripper is current at
+ */
+double Gripper::GetAngle()
+{
+  return _servo->read();
+}
+
+/*
+ * Set the min and max angles that the servo will open and close to
+ */
+void Gripper::Mapping(int new_min_angle, int new_max_angle)
 {
   _min_angle = new_min_angle;
-}
-
-void Gripper::set_max_angle(int new_max_angle)
-{
   _max_angle = new_max_angle;
 }
-
-
 

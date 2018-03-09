@@ -1,9 +1,9 @@
 #include "Stepper_Motor.h"
 
-// primary constructor
-StepperMotor::StepperMotor(int dir_pin, int step_pin, int steps_per_rotation)
+
+StepperMotor::StepperMotor(int dir_pin, int step_pin, int steps_per_rotation, int micro_stepping)
 {
-  begin(dir_pin, step_pin, steps_per_rotation);
+  begin(dir_pin, step_pin, steps_per_rotation, micro_stepping);
 }
 
 StepperMotor::StepperMotor()
@@ -12,18 +12,33 @@ StepperMotor::StepperMotor()
   // make sure to call begin if you use this
 }
 
-void StepperMotor::begin(int dir_pin, int step_pin, int steps_per_rotation)
+void StepperMotor::begin(int dir_pin, int step_pin)
 {
-  pinMode(_dir_pin, OUTPUT);
-  pinMode(_step_pin, OUTPUT);
+  // set up the pins
   _dir_pin = dir_pin;
   _step_pin = step_pin;
-  _steps_per_rotation = steps_per_rotation;
+  pinMode(_dir_pin, OUTPUT);
+  pinMode(_step_pin, OUTPUT);
+  // set up 200 steps per rev with x1 microstepping
+  Mapping(200, 1);
+  // put it in position mode
   _manual = false;
-  _percent_step = 1 / steps_per_rotation;
+  // create a new stepper object
   stepper = new AccelStepper(AccelStepper::DRIVER, _step_pin, _dir_pin, 0, 0, true);
-  // this is 10 rpm
-  stepper->setMaxSpeed(1000);
+  // Set the max speed to 10 RPM
+  SetMaxSpeed(10);
+}
+
+void MappingSteps(int steps_per_rotation, int micro_stepping)
+{
+  _steps_per_rotation = steps_per_rotation;
+  _micro_stepping = micro_stepping;
+}
+
+void MappingSpeed(int steps_per_rotation, int micro_stepping)
+{
+  _steps_per_rotation = steps_per_rotation;
+  _micro_stepping = micro_stepping;
 }
 
 // this needs to be called quite quickly
@@ -54,8 +69,42 @@ void StepperMotor::Manual(int new_speed)
 void StepperMotor::SetSetpoint(int new_setpoint)
 {
   _manual = false;
-  double ang_to_step = (((double)new_setpoint) * _percent_angle) * _steps_per_rotation;
+  /*
+     This math works out to be
+
+     (steps to go around 1 rev)*(multiplication of steps due to microstepping)*(1/360 or degrees per rev)*(new degrees)
+
+     In units it works out to be
+
+      steps |  unitless | rev    | degrees |
+     -------|-----------|--------|---------|   -> final unit is steps
+        rev |           | degrees|         |
+  */
+  double ang_to_step = _steps_per_rotation;
+  ang_to_step *= _micro_stepping;
+  ang_to_step *= _percent_angle; // this is 1/360. multiplication is faster than division
+  ang_to_step *= new_setpoint;
+
   stepper->move((long)new_setpoint);
+}
+void StepperMotor::SetMaxSpeed(int rpm)
+{
+  /*
+     SetMaxSpeed takes in a float that is steps per second
+     The math below works out to be
+     (rotation per min)/(sec per min)/(steps per rotation)
+
+     The units work out to be
+
+     rotation|   min   |   steps  | unitless |
+     --------|---------|----------|----------|  -> Final unit is steps per second
+       min   | seconds | rotation |          |
+
+  */
+  double our_speed = rpm;
+  our_speed /= 60; // to get to rotation per second
+  our_speed /= (_steps_per_rotation * _micro_stepping); // to get to steps per second
+  stepper->setMaxSpeed(our_speed);
 }
 
 void StepperMotor::Home() {

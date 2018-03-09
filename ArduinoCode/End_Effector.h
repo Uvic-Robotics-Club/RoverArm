@@ -8,10 +8,10 @@ public:
   Gripper(int servo_pin);
   Gripper();
   void begin(int servo_pin);
-  void open_gripper();
-  void close_gripper();
-  void set_min_angle(int new_min_angle);
-  void set_max_angle(int new_max_angle);
+  void Open();
+  void Close();
+  void Mapping(int new_min_angle, int new_max_angle);
+  double GetAngle();
 private:
   Servo* _servo;
   int _servo_pin;
