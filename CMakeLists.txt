@@ -15,6 +15,7 @@ add_message_files(FILES
   joint_enable.msg
   arm_velocity.msg
   joint_angles.msg
+  diagnostic.msg
 )
 
 add_service_files(FILES

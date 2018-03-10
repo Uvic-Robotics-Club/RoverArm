@@ -3,6 +3,7 @@
 #include <geometry_msgs/QuaternionStamped.h>
 #include <RoverArm/arm_velocity.h>
 #include <RoverArm/joint_angles.h>
+#include <RoverArm/diagnostic.h>
 #include <serial/serial.h>
 #include <string>
 #include <iostream>
@@ -13,7 +14,7 @@
 #define LOWER_ELBOW 1
 #define UPPER_ELBOW 2
 #define GRIPPER 3
-
+ 
 
 
 std::string usbPort;
@@ -67,7 +68,7 @@ void feedbackParser(){
 
 void sendToArm(){
 	
-    geometry_msgs::QuaternionStamped diagnostics_msg;
+    RoverArm::diagnostic diagnostics_msg;
     
     while(ser.available()>=1){
 		feedbackParser();
@@ -86,35 +87,14 @@ void sendToArm(){
 	}
    
 
-  diagnostics_msg.header.stamp = ros::Time::now();
-  diagnostics_msg.quaternion.x = data_to_send[0];
-  diagnostics_msg.quaternion.y = data_to_send[1];
-  diagnostics_msg.quaternion.z = data_to_send[2];
-  diagnostics_msg.quaternion.w = data_to_send[3];
+  diagnostics_msg.base_mode = data_to_send[0];
+  diagnostics_msg.base_angle = data_to_send[1];
+  diagnostics_msg.lower_mode = data_to_send[2];
+  diagnostics_msg.lower_angle = data_to_send[3];
+  diagnostics_msg.upper_mode = data_to_send[4];
+  diagnostics_msg.upper_angle = data_to_send[5];
+  
 
-  switch (data_to_send[0]) {
-    case 0:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Rotate Velocity [-,+,0]";
-      break;
-    case 1:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Lower Velocity [-,+,0]";
-      break;
-    case 2:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Upper Velocity [-,+,0]";
-      break;
-    case 3:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Gripper Velocity [-,+,0]";
-      break;
-    case 4:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Rotate Position [H,L,0]";
-      break;
-    case 5:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Lower Position [H,L,0]";
-      break;
-    case 6:
-      diagnostics_msg.header.frame_id = "Arm Diagnostics: Upper Position [H,L,0]";
-      break;
-  };
   armPub.publish(diagnostics_msg);
 }
 
@@ -124,11 +104,12 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   lower =  (int)round(newdata_to_send->joint.lower*255.0*newdata_to_send->enable.lower);
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
   gripper =  (int)round(newdata_to_send->joint.gripper*255.0);
-  data_to_send[2] = 1; // manual lower
-  data_to_send[4] = 2; // manual upper
+ 
   data_to_send[0] = 0; // manual rotate
   data_to_send[1] = rotate;
+  data_to_send[2] = 1; // manual lower
   data_to_send[3] = lower;
+  data_to_send[4] = 2; // manual upper
   data_to_send[5] = upper;
 
 }
@@ -144,7 +125,6 @@ void setPosition(const RoverArm::joint_angles::ConstPtr& newdata_to_send){
   data_to_send[1] = 0;
   data_to_send[3] = lower;
   data_to_send[5] = upper;
-
 }
 
 
@@ -156,7 +136,7 @@ int main(int argc, char **argv){
   ros::NodeHandle pnh("~");
   ros::Subscriber joySub = nh.subscribe("Arm/AngleVelocities",1,setVelocity);
   ros::Subscriber progSub = nh.subscribe("Arm/Position",1,setPosition);
-  armPub = nh.advertise<geometry_msgs::QuaternionStamped>("Arm/Diagnostics",1);
+  armPub = nh.advertise<RoverArm::diagnostic>("Arm/Diagnostics",1);
   arm_feedback_Pub = nh.advertise<RoverArm::joint_angles>("Arm/Feedback",1);
   ROS_INFO("STARTING UP THE DMC");
   //nh.param<std::string>("USBPORT", usbPort, "/dev/ttyACM0");
@@ -169,7 +149,7 @@ int main(int argc, char **argv){
   else{
       try
     {
-        ser.setPort("/dev/ttyUSB1");
+        ser.setPort("/dev/ttyUSB0");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
@@ -194,9 +174,7 @@ int main(int argc, char **argv){
   ros::Rate loop_rate(5);
   while(ros::ok()){
 	ros::spinOnce();
-	
 	if(((float)(clock()-t))/CLOCKS_PER_SEC > sleep_duration){
-		
 		sendToArm();
 		t = clock();
 	}

@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Utilities/Robotic
 from Arm import DisplayArm
 import numpy as np
 
-arm = DisplayArm([0.001, 1, 1, 0.001],
+arm = DisplayArm([0.001, 0.6, 0.5715, 0.001],
 					 units=1,
 					 q1 = 90.0/360*2*np.pi,
 					 q2 = 60.0/360*2*np.pi,
@@ -17,6 +17,10 @@ arm = DisplayArm([0.001, 1, 1, 0.001],
 
 def get_angle_from_point(req):
     global arm
+    arm.q1 = 90.0/360*2*np.pi
+    arm.q2 = 60.0/360*2*np.pi
+    arm.q3 = 0.0/360*2*np.pi
+    arm.q4 = 0.0/360*2*np.pi
     results = arm.inverse_kinematics([req.destination.x,req.destination.y,req.destination.z])
     return_msg = point_to_angleResponse()
     return_msg.angles.base_angle = rad_to_deg(results[0])
@@ -54,9 +58,9 @@ def get_points_from_angles(req):
     
 def set_actual_angles(data):
     global arm
-    #arm.q2 = deg_to_rad(data.lower_angle)
-    #arm.q3 = deg_to_rad(data.upper_angle)
-    #arm.q1 = deg_to_rad(data.base_angle)
+    arm.q2 = deg_to_rad(data.lower_angle)
+    arm.q3 = deg_to_rad(data.upper_angle)
+    arm.q1 = deg_to_rad(data.base_angle)
 
     
 

@@ -11,7 +11,10 @@ import rospy
 import threading
 
 from RoverArm.msg import arm_velocity
+from RoverArm.msg import joint_angles
 from RoverArm.srv import angles_to_points,point_to_angle
+
+from geometry_msgs.msg import Point
 
 
 import sys
@@ -34,6 +37,7 @@ import matplotlib.pyplot as plt
 
 # Gloabl Ros message
 global_msg = arm_velocity()
+global_feedback_msg = joint_angles()
 
 arm_fk = rospy.ServiceProxy('arm_fk',angles_to_points)
 arm_ik = rospy.ServiceProxy('arm_ik',point_to_angle)
@@ -111,12 +115,18 @@ class MainScreen(QtGui.QMainWindow):
 
         rospy.init_node('gui_listener', anonymous=True)
         rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
+        rospy.Subscriber("Arm/Feedback",joint_angles, feedback_callback)
+        self.arm_pub = rospy.Publisher("Arm/Goal", Point,queue_size=10)
         # spin() simply keeps python from exiting until this node is stopped
         #rospy.spin()
 
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.updateFromGlobal)
         timer.start(100)
+        
+        self.dial.valueChanged.connect(self.setPosition)
+        self.horizontalSlider.valueChanged.connect(self.setPosition)
+        self.verticalSlider.valueChanged.connect(self.setPosition)
 
 
     def __internalClose__(self):
@@ -124,9 +134,19 @@ class MainScreen(QtGui.QMainWindow):
         this is an internal only method that closes the main window
         '''
         self.close()
+    
+    def setPosition(self, data):
+        global global_feedback_msg
+        new_message = Point()
+        new_message.x = (self.horizontalSlider.value())/100.0
+        new_message.y = (self.verticalSlider.value())/100.0
+        new_message.z = (self.dial.value())/100.0
+        self.arm_pub.publish(new_message)
 
     def updateFromGlobal(self):
         global global_msg
+        global global_feedback_msg
+        global arm_fk
         '''
         This function is called on a timer. This updates the main screen with values from rover.
 
@@ -147,8 +167,16 @@ class MainScreen(QtGui.QMainWindow):
         self.upper_lock.setChecked(not global_msg.enable.upper)
         self.rotation_lock.setChecked(not global_msg.enable.rotate)
         self.speed_lock.setChecked(global_msg.enable.speed)
+        try:
+            ans = arm_fk(global_feedback_msg)
+            self.actual_x_LCD.display(ans.end_of_link_two.x)
+            self.actual_y_LCD.display(ans.end_of_link_two.y)
+            self.actual_z_LCD.display(ans.end_of_link_two.z)
+        except Exception:
+            pass
+        
         if(rospy.is_shutdown()):
-			self.__internalClose__()
+            self.__internalClose__()
 
 
 
@@ -169,6 +197,10 @@ def startGUI():
 def callback(data):
     global global_msg
     global_msg = data
+    
+def feedback_callback(data):
+    global global_feedback_msg
+    global_feedback_msg = data
 
 def StartROS():
     print "nothing"
