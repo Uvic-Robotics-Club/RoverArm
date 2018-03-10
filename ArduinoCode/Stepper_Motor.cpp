@@ -12,16 +12,15 @@ StepperMotor::StepperMotor()
   // make sure to call begin if you use this
 }
 
-void StepperMotor::begin(int dir_pin, int step_pin)
+void StepperMotor::begin(int dir_pin, int step_pin, int steps_per_rotation, int micro_stepping)
 {
   // set up the pins
   _dir_pin = dir_pin;
   _step_pin = step_pin;
   pinMode(_dir_pin, OUTPUT);
   pinMode(_step_pin, OUTPUT);
-  // set up 200 steps per rev with x1 microstepping
-  Mapping(200, 1);
-  // put it in position mode
+  MappingSteps(steps_per_rotation, micro_stepping);
+  // put it in automatic mode
   _manual = false;
   // create a new stepper object
   stepper = new AccelStepper(AccelStepper::DRIVER, _step_pin, _dir_pin, 0, 0, true);
@@ -29,13 +28,7 @@ void StepperMotor::begin(int dir_pin, int step_pin)
   SetMaxSpeed(10);
 }
 
-void MappingSteps(int steps_per_rotation, int micro_stepping)
-{
-  _steps_per_rotation = steps_per_rotation;
-  _micro_stepping = micro_stepping;
-}
-
-void MappingSpeed(int steps_per_rotation, int micro_stepping)
+void StepperMotor::MappingSteps(int steps_per_rotation, int micro_stepping)
 {
   _steps_per_rotation = steps_per_rotation;
   _micro_stepping = micro_stepping;
@@ -61,7 +54,11 @@ double StepperMotor::GetSpeed()
 void StepperMotor::Manual(int new_speed)
 {
   _manual = true;
-  stepper->setSpeed(new_speed);
+  
+  double our_speed = new_speed; // in rpm
+  our_speed /= 60; // to get to rotation per second
+  our_speed /= (_steps_per_rotation * _micro_stepping); // to get to steps per second
+  stepper->setSpeed(new_speed); // our_speed dosnt work yet
   stepper->runSpeed();
 }
 
@@ -104,7 +101,7 @@ void StepperMotor::SetMaxSpeed(int rpm)
   double our_speed = rpm;
   our_speed /= 60; // to get to rotation per second
   our_speed /= (_steps_per_rotation * _micro_stepping); // to get to steps per second
-  stepper->setMaxSpeed(our_speed);
+  stepper->setMaxSpeed(100);
 }
 
 void StepperMotor::Home() {

@@ -35,7 +35,8 @@
 
 //Stepper motor and corresponding limit switch Settings
 #define rotateLimitPin 2 // not in use as of now
-#define STEPS_PER_ROTATION 800
+#define STEPS_PER_ROTATION 200 // defined by the motor
+#define ROTATE_MICRO_STEPPING 4 // defined by the motor driver
 #define ROTATE_DIR  4
 #define ROTATE_STEP 7
 
@@ -81,12 +82,12 @@ void setup() {
   //Rotate Stepper Setup
   // the limit pin is not being used right now
   pinMode(rotateLimitPin, INPUT);
-  rotate.begin(ROTATE_DIR, ROTATE_STEP, STEPS_PER_ROTATION);
+  rotate.begin(ROTATE_DIR, ROTATE_STEP, STEPS_PER_ROTATION, ROTATE_MICRO_STEPPING);
 
   //Lower Linear Actuator Setup
   // pins setup inside the class
   lower.begin(LOWER_PWM, LOWER_DIR, LOWER_FEEDBACK);
-  lower.Mapping(86, 300, 93, 40);
+  lower.Mapping(120, 300, 93, 40);
   lower.SetSoftLimits(45, 360);
 
 
@@ -99,29 +100,32 @@ void setup() {
     gripper.begin(GRIPPER_PIN);
     gripper.Mapping(0, 180);
   */
-
+  lower.Manual(0);
+  upper.Manual(0);
+  rotate.Manual(0);
 
 }
 
 void loop() {
+  // If the last message was over a second ago, turn everything to manual and turn it off.
   if ((millis() - LastMessageReceived) > TIMEOUT) {
-    // If the last message was over a second ago, turn everything to manual and turn it off.
     lower.Manual(0);
     upper.Manual(0);
     rotate.Manual(0);
     Serial.println("TIMEOUT");
   }
-
+  // call the update on all joints
   lower.Update();
   upper.Update();
   rotate.Update();
-
-  Serial.print(upper.GetAngle());
-  Serial.print(",");
+  // report back all the stuff that I need for feedback
   Serial.print(lower.GetAngle());
+  Serial.print(",");
+  Serial.print(upper.GetAngle());
   Serial.print(",");
   Serial.println(rotate.GetAngle());
 
+  // this delay is just so that serial event is not called to much (allows data to come in)
   delay(50);
 }
 
@@ -167,12 +171,14 @@ void serialEvent() {
         break;
       case 5:
         lower.SetSetpoint(value);
+        lower.EnablePID();
         break;
       case 6:
         upper.SetSetpoint(value);
+        upper.EnablePID();
         break;
     };
 
-  }
+  } // end of the while loop
 }
 

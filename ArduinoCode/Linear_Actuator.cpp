@@ -38,7 +38,7 @@ void LinearActuator::begin(int pwm_pin, int dir_pin, int feedback_pin)
   */
   _kp = 15;
   _ki = 1;
-  _kd = 0;
+  _kd = 0.7;
 
   // input, output, and setpoint are used in the PID
   _input = 0;
