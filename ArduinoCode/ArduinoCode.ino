@@ -4,9 +4,9 @@
   All Gripper/End_effector Code will be commented out to prevent issues with lower
   When this is confirmed with Electrical That we can safely switch the DIR and PWM pins then we can uncomment
   only uncomment this if you are sure the servo library will not interfere with the analog write on lower
-
-  #include "End_Effector.h"
 */
+#include "End_Effector.h"
+
 
 /*
   This will control 4 joints of the Rover Arm
@@ -43,8 +43,8 @@
 
 //Lower Joint linear actuator Settings
 // pins 10 and 11 for uno and nano
-#define LOWER_PWM 10
-#define LOWER_DIR 11
+#define LOWER_PWM 11
+#define LOWER_DIR 10
 #define LOWER_FEEDBACK A0
 
 //Upper Joint linear actuator Settings
@@ -68,7 +68,7 @@ LinearActuator lower;
 LinearActuator upper;
 
 // make the gripper object
-//Gripper gripper; // see comment #1
+Gripper gripper; // see comment #1
 
 double my2_map(double x, double in_min, double in_max, double out_min, double out_max)
 {
@@ -93,13 +93,13 @@ void setup() {
 
   //Upper Linear Actuator Setup
   upper.begin(UPPER_PWM, UPPER_DIR, UPPER_FEEDBACK);
-  upper.Mapping(473, 892, 162, 52.5);
-  upper.SetSoftLimits(0, 135);
+  upper.Mapping(330, 684, 162, 52.5);
+  upper.SetSoftLimits(50, 135);
 
-  /* see comment #1
-    gripper.begin(GRIPPER_PIN);
-    gripper.Mapping(0, 180);
-  */
+  /* see comment #1*/
+  gripper.begin(GRIPPER_PIN);
+  gripper.Mapping(100, 180);
+
   lower.Manual(0);
   upper.Manual(0);
   rotate.Manual(0);
@@ -119,9 +119,11 @@ void loop() {
   upper.Update();
   rotate.Update();
   // report back all the stuff that I need for feedback
-  Serial.print(lower.GetAngle());
+  Serial.print(upper.GetRawInput());
   Serial.print(",");
   Serial.print(upper.GetAngle());
+  Serial.print(",");
+  Serial.print(gripper.GetAngle());
   Serial.print(",");
   Serial.println(rotate.GetAngle());
 
@@ -157,14 +159,14 @@ void serialEvent() {
         upper.Manual(value);
         break;
       case 3:
-        /* See Comment # 1
-          if (value > 0) {
-            gripper.Open();
-          }
-          else if (value < 0) {
-            gripper.Close();
-          }
-        */
+        /* See Comment # 1*/
+        if (value > 0) {
+          gripper.Open();
+        }
+        else if (value < 0) {
+          gripper.Close();
+        }
+
         break;
       case 4:
         rotate.SetSetpoint(value);

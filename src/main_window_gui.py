@@ -15,6 +15,7 @@ from RoverArm.msg import joint_angles
 from RoverArm.srv import angles_to_points,point_to_angle
 
 from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
 
 
 import sys
@@ -26,12 +27,13 @@ if use_pyside:
     from PySide import QtGui, QtCore
 else:
     from PyQt4 import QtGui, QtCore
-
+from PyQt4.QtGui import QImage
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import axes3d
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 
@@ -110,6 +112,8 @@ class MainScreen(QtGui.QMainWindow):
         #l = self.verticalLayout
         #dc = MyDynamicMplCanvas(self, width=5, height=4, dpi=100)
         #l.addWidget(dc)
+        self.wd  = 640
+        self.ht = 480
 
 
 
@@ -117,6 +121,8 @@ class MainScreen(QtGui.QMainWindow):
         rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
         rospy.Subscriber("Arm/Feedback",joint_angles, feedback_callback)
         self.arm_pub = rospy.Publisher("Arm/Goal", Point,queue_size=10)
+        rospy.Subscriber("/usb_cam/image_raw", Image, self.image_callback)
+        self.qimage = None
         # spin() simply keeps python from exiting until this node is stopped
         #rospy.spin()
 
@@ -128,7 +134,13 @@ class MainScreen(QtGui.QMainWindow):
         self.horizontalSlider.valueChanged.connect(self.setPosition)
         self.verticalSlider.valueChanged.connect(self.setPosition)
 
-
+    def image_callback(self,msg):
+        #rospy.logerr("got a new image")
+        np_arr = np.fromstring(msg.data, np.uint8)
+        sz = (msg.height, msg.width, msg.step / msg.width)
+        image = np.reshape(np_arr, sz)
+        self.qimage = QImage.rgbSwapped(QImage(image.tostring(),self.wd, self.ht, QImage.Format_RGB888))
+        
     def __internalClose__(self):
         '''
         this is an internal only method that closes the main window
@@ -167,6 +179,8 @@ class MainScreen(QtGui.QMainWindow):
         self.upper_lock.setChecked(not global_msg.enable.upper)
         self.rotation_lock.setChecked(not global_msg.enable.rotate)
         self.speed_lock.setChecked(global_msg.enable.speed)
+        if self.qimage is not None:
+            self.picture_placeholder.setPixmap(QtGui.QPixmap.fromImage(self.qimage))
         try:
             ans = arm_fk(global_feedback_msg)
             self.actual_x_LCD.display(ans.end_of_link_two.x)
@@ -201,6 +215,8 @@ def callback(data):
 def feedback_callback(data):
     global global_feedback_msg
     global_feedback_msg = data
+
+
 
 def StartROS():
     print "nothing"

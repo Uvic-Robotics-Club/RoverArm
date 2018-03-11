@@ -25,7 +25,7 @@ ros::Publisher arm_feedback_Pub;
 bool output_to_serial = true;
 // data to send
 // mode 0, value 0, mode 1, value 1, mode 2, value 2, mode 3, value 3
-int data_to_send[] = {0,0,0,0,0,0,0,0};
+int data_to_send[] = {0,0,0,0,0,0,0,0,0,0};
 int rotate = 0;
 int lower = 0;
 int upper = 0;
@@ -78,7 +78,7 @@ void sendToArm(){
     if(output_to_serial){
         ser.flush();
         char buffer[60];
-        sprintf(buffer, "M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i", data_to_send[0], data_to_send[1], data_to_send[2], data_to_send[3], data_to_send[4], data_to_send[5]);
+        sprintf(buffer, "M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i ", data_to_send[0], data_to_send[1], data_to_send[2], data_to_send[3], data_to_send[4], data_to_send[5], data_to_send[6], data_to_send[7]);
         ser.write(buffer);
         ser.flush();
     }
@@ -111,6 +111,8 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   data_to_send[3] = lower;
   data_to_send[4] = 2; // manual upper
   data_to_send[5] = upper;
+  data_to_send[6] = 3; // manual gripper
+  data_to_send[7] = gripper;
 
 }
 
