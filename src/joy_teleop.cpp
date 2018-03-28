@@ -27,6 +27,8 @@ int button_12 = 11;
 bool rotate_enable = true;
 bool lower_enable = true;
 bool upper_enable = true;
+bool speed_lock = false;
+double speed = 0;
 
 ros::Publisher anglePub;
 
@@ -53,13 +55,23 @@ void joy_to_arm(const sensor_msgs::Joy::ConstPtr& joy){
     if(upper_enable){ROS_INFO("UPPER ENABLED");}
     else{ROS_INFO("UPPER DISABLED");}
   }
+  if(joy->buttons[button_12]==1){
+    speed_lock = !speed_lock;
+    if(upper_enable){ROS_INFO_STREAM("SPEED LOCKED TO "<< speed);}
+    else{ROS_INFO("SPEED UNLOCKED");}
+  }
+  if(not speed_lock){
+	speed = joy->axes[slider];
+  }
   newMessage.enable.rotate = rotate_enable;
   newMessage.enable.lower = lower_enable;
   newMessage.enable.upper = upper_enable;
-  newMessage.joint.rotate = joy->axes[clockwise_counterclockwise]*joy->axes[slider];
-  newMessage.joint.lower = joy->axes[forward_back]*joy->axes[slider];
-  newMessage.joint.upper = joy->axes[ud_hat]*joy->axes[slider];
-  newMessage.joint.gripper = -1*joy->buttons[trigger]+joy->buttons[thumb_rest];
+  newMessage.enable.speed = speed_lock;
+  newMessage.joint.rotate = joy->axes[clockwise_counterclockwise]*speed;
+  newMessage.joint.lower = joy->axes[forward_back]*speed;
+  newMessage.joint.upper = joy->axes[ud_hat]*speed;
+  newMessage.joint.gripper = -1*speed*joy->buttons[trigger]+speed*joy->buttons[thumb_rest];
+  newMessage.joint.speed = speed;
   anglePub.publish(newMessage);
 }
 
