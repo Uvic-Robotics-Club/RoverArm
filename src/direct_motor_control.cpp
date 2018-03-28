@@ -42,7 +42,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
+	//ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;

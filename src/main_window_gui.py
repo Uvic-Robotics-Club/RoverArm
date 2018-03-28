@@ -121,7 +121,8 @@ class MainScreen(QtGui.QMainWindow):
         rospy.Subscriber("Arm/AngleVelocities", arm_velocity, callback)
         rospy.Subscriber("Arm/Feedback",joint_angles, feedback_callback)
         self.arm_pub = rospy.Publisher("Arm/Goal", Point,queue_size=10)
-        rospy.Subscriber("/usb_cam/image_raw", Image, self.image_callback)
+        self.arm_pub2 = rospy.Publisher("Arm/Position", joint_angles,queue_size=10)
+        rospy.Subscriber("/usb_cam/image_processed", Image, self.image_callback)
         self.qimage = None
         # spin() simply keeps python from exiting until this node is stopped
         #rospy.spin()
@@ -148,13 +149,19 @@ class MainScreen(QtGui.QMainWindow):
         self.close()
     
     def setPosition(self, data):
+        '''
         global global_feedback_msg
         new_message = Point()
         new_message.x = (self.horizontalSlider.value())/100.0
         new_message.y = (self.verticalSlider.value())/100.0
         new_message.z = (self.dial.value())/100.0
         self.arm_pub.publish(new_message)
-
+        '''
+        new_message = joint_angles()
+        new_message.base_angle = (self.horizontalSlider.value())
+        new_message.lower_angle = (self.verticalSlider.value())
+        new_message.upper_angle = (self.dial.value())
+        self.arm_pub2.publish(new_message)
     def updateFromGlobal(self):
         global global_msg
         global global_feedback_msg
@@ -183,9 +190,9 @@ class MainScreen(QtGui.QMainWindow):
             self.picture_placeholder.setPixmap(QtGui.QPixmap.fromImage(self.qimage))
         try:
             ans = arm_fk(global_feedback_msg)
-            self.actual_x_LCD.display(ans.end_of_link_two.x)
-            self.actual_y_LCD.display(ans.end_of_link_two.y)
-            self.actual_z_LCD.display(ans.end_of_link_two.z)
+            self.actual_x_LCD.display(global_feedback_msg.lower_angle)
+            self.actual_y_LCD.display(global_feedback_msg.upper_angle)
+            self.actual_z_LCD.display(global_feedback_msg.rotate_angle)
         except Exception:
             pass
         

@@ -36,9 +36,9 @@ void LinearActuator::begin(int pwm_pin, int dir_pin, int feedback_pin)
     For more information on this look here
     (https://robotics.stackexchange.com/questions/167/what-are-good-strategies-for-tuning-pid-loops)
   */
-  _kp = 15;
-  _ki = 1;
-  _kd = 0.7;
+  _kp = 50;
+  _ki = 10;
+  _kd = 1.2;
 
   // input, output, and setpoint are used in the PID
   _input = 0;

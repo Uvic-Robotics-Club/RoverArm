@@ -119,7 +119,7 @@ void loop() {
   upper.Update();
   rotate.Update();
   // report back all the stuff that I need for feedback
-  Serial.print(upper.GetRawInput());
+  Serial.print(lower.GetAngle());
   Serial.print(",");
   Serial.print(upper.GetAngle());
   Serial.print(",");
@@ -150,7 +150,7 @@ void serialEvent() {
     LastMessageReceived = millis();
     switch (mode) {
       case 0:
-        rotate.Manual(value);
+        rotate.Manual(value/10);
         break;
       case 1:
         lower.Manual(value);
