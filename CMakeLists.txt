@@ -11,9 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 add_message_files(FILES
+  arm_velocity.msg
   joint_velocities.msg
   joint_enable.msg
-  arm_velocity.msg
   joint_angles.msg
   diagnostic.msg
 )
@@ -25,7 +25,7 @@ add_service_files(FILES
 
 include_directories(${catkin_INCLUDE_DIRS})
 generate_messages(DEPENDENCIES std_msgs geometry_msgs)
-catkin_package()
+catkin_package(CATKIN_DEPENDS message_runtime)
 
 
 
