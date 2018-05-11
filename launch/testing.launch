@@ -7,7 +7,7 @@
     </node>
     <node pkg="RoverArm" name="test_service" type="inverse_kinematics.py" />
     <node pkg="RoverArm" name="prog_to_arm" type="program_teleop" />
-    <node pkg="RoverArm" name="gui" type="main_window_gui.py" />
+    <node pkg="RoverArm" name="gui" type="main_window_gui.py" required="true"/>
   <group ns="testing">
     <!--node pkg="RoverArm" name="ArduinoSimulator" type="arduino_sim" /-->
     <!-- node pkg="RoverArm" name="JoystickSimulator" type="joystick_sim" /-->

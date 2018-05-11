@@ -42,7 +42,7 @@ void feedbackParser(){
 	data_returned = "";
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
-	//ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
+	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
 	std::vector<double> vect;
 	std::stringstream ss(data_returned);
 	double i;
@@ -78,7 +78,8 @@ void sendToArm(){
     if(output_to_serial){
         ser.flush();
         char buffer[60];
-        sprintf(buffer, "M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i ", data_to_send[0], data_to_send[1], data_to_send[2], data_to_send[3], data_to_send[4], data_to_send[5], data_to_send[6], data_to_send[7]);
+        //sprintf(buffer, "M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i M:%i V:%i ", data_to_send[0], data_to_send[1], data_to_send[2], data_to_send[3], data_to_send[4], data_to_send[5], data_to_send[6], data_to_send[7]);
+        sprintf(buffer, "%i %i ", data_to_send[0],data_to_send[1]);
         ser.write(buffer);
         ser.flush();
     }
@@ -105,14 +106,16 @@ void setVelocity(const RoverArm::arm_velocity::ConstPtr& newdata_to_send){
   upper =  (int)round(newdata_to_send->joint.upper*255.0*newdata_to_send->enable.upper);
   gripper =  (int)round(newdata_to_send->joint.gripper*255.0);
  
-  data_to_send[0] = 0; // manual rotate
-  data_to_send[1] = rotate;
-  data_to_send[2] = 1; // manual lower
-  data_to_send[3] = lower;
-  data_to_send[4] = 2; // manual upper
-  data_to_send[5] = upper;
-  data_to_send[6] = 3; // manual gripper
-  data_to_send[7] = gripper;
+  //data_to_send[0] = 0; // manual rotate
+  //data_to_send[1] = rotate;
+  //data_to_send[2] = 1; // manual lower
+  //data_to_send[3] = lower;
+  //data_to_send[4] = 2; // manual upper
+  //data_to_send[5] = upper;
+  //data_to_send[6] = 3; // manual gripper
+  //data_to_send[7] = gripper;
+  data_to_send[0] = (int)round(newdata_to_send->joint.lower*100/newdata_to_send->joint.speed);
+  data_to_send[1] = (int)round(newdata_to_send->joint.speed*100);
 
 }
 
@@ -151,7 +154,7 @@ int main(int argc, char **argv){
   else{
       try
     {
-        ser.setPort("/dev/ttyUSB0");
+        ser.setPort("/dev/ttyUSB1");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
