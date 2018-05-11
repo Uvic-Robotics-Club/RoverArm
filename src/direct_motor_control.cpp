@@ -43,27 +43,27 @@ void feedbackParser(){
 	ser.readline(data_returned);
 	data_returned.erase(std::remove(data_returned.begin(), data_returned.end(), '\n'), data_returned.end());
 	ROS_ERROR_STREAM("Arduino->" << data_returned << "|");
-	std::vector<double> vect;
-	std::stringstream ss(data_returned);
-	double i;
-	while (ss >> i){
-		vect.push_back(i);
-		if (ss.peek() == ',' or ss.peek()=='\n')
-			ss.ignore();
-	}
+	//std::vector<double> vect;
+	//std::stringstream ss(data_returned);
+	//double i;
+	//while (ss >> i){
+		//vect.push_back(i);
+		//if (ss.peek() == ',' or ss.peek()=='\n')
+			//ss.ignore();
+	//}
 	
-	std::string maybe_data = "";
-	char buffer [50];
-	for(int i=0; i < vect.size(); i++){
-		sprintf(buffer,"%f",vect[i]);
-		maybe_data = maybe_data + buffer + " | ";
-	}
-	//ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
-	RoverArm::joint_angles feedbackMessage;
-	feedbackMessage.lower_angle = vect[0];
-	feedbackMessage.upper_angle = vect[1];
-	feedbackMessage.base_angle = vect[2];
-	arm_feedback_Pub.publish(feedbackMessage);
+	//std::string maybe_data = "";
+	//char buffer [50];
+	//for(int i=0; i < vect.size(); i++){
+		//sprintf(buffer,"%f",vect[i]);
+		//maybe_data = maybe_data + buffer + " | ";
+	//}
+	////ROS_ERROR_STREAM("PROGRAM -> " << maybe_data);
+	//RoverArm::joint_angles feedbackMessage;
+	//feedbackMessage.lower_angle = vect[0];
+	//feedbackMessage.upper_angle = vect[1];
+	//feedbackMessage.base_angle = vect[2];
+	//arm_feedback_Pub.publish(feedbackMessage);
 }
 
 void sendToArm(){
@@ -154,7 +154,7 @@ int main(int argc, char **argv){
   else{
       try
     {
-        ser.setPort("/dev/ttyUSB1");
+        ser.setPort("/dev/ttyUSB0");
         ser.setBaudrate(115200);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);

@@ -1,6 +1,6 @@
-#define UPPER_PWM 9
+#define UPPER_PWM 6
 //define UPPER_PWM LED_BUILTIN
-#define UPPER_DIR 6
+#define UPPER_DIR 5
 #include <TimerOne.h>
 
 volatile int duty = 0;
@@ -28,6 +28,11 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(UPPER_DIR, OUTPUT);
   pinMode(UPPER_PWM, OUTPUT);
+  analogReference(INTERNAL);
+  pinMode(A0,INPUT);
+  pinMode(A1,INPUT);
+  pinMode(A2,INPUT);
+  pinMode(A3,INPUT);
   Serial.begin(115200);
   period = frequency_to_microsecond_period(frequency * full_time);
   Timer1.initialize(period);
@@ -39,6 +44,14 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  Serial.print(analogRead(A0));
+  Serial.print(" ");
+  Serial.print(analogRead(A1));
+  Serial.print(" ");
+  Serial.print(analogRead(A2));
+  Serial.print(" ");
+  Serial.println(analogRead(A3));
+  //delay(300);
 
 }
 
